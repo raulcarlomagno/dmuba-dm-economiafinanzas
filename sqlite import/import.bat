@@ -1,0 +1,1 @@
+sqlite3 < "import commands.txt"

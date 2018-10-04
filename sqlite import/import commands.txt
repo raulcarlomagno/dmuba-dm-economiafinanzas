@@ -1,0 +1,392 @@
+.open dataset.sqlite
+
+--PRAGMA temp_store = MEMORY;
+--PRAGMA JOURNAL_MODE = OFF;
+--PRAGMA SYNCHRONOUS = OFF;
+
+CREATE TABLE `periodos` (
+`numero_de_cliente` INTEGER,
+`foto_mes` INTEGER,
+`marketing_activo_ultimos90dias` INTEGER,
+`cliente_vip` INTEGER,
+`internet` INTEGER,
+`cliente_edad` INTEGER,
+`cliente_antiguedad` INTEGER,
+`mrentabilidad` REAL,
+`mrentabilidad_annual` REAL,
+`mcomisiones` REAL,
+`mactivos_margen` REAL,
+`mpasivos_margen` REAL,
+`marketing_coss_selling` INTEGER,
+`tpaquete1` INTEGER,
+`tpaquete2` INTEGER,
+`tpaquete3` INTEGER,
+`tpaquete4` INTEGER,
+`tpaquete5` INTEGER,
+`tpaquete6` INTEGER,
+`tpaquete7` INTEGER,
+`tpaquete8` INTEGER,
+`tpaquete9` INTEGER,
+`tcuentas` INTEGER,
+`tcuenta_corriente` INTEGER,
+`mcuenta_corriente_Nopaquete` REAL,
+`mcuenta_corriente_Paquete` REAL,
+`mcuenta_corriente_dolares` INTEGER,
+`tcaja_ahorro` INTEGER,
+`mcaja_ahorro_Paquete` REAL,
+`mcaja_ahorro_Nopaquete` REAL,
+`mcaja_ahorro_dolares` REAL,
+`mdescubierto_preacordado` REAL,
+`mcuentas_saldo` REAL,
+`ttarjeta_debito` INTEGER,
+`ctarjeta_debito_transacciones` INTEGER,
+`mautoservicio` REAL,
+`ttarjeta_visa` INTEGER,
+`ctarjeta_visa_transacciones` INTEGER,
+`mtarjeta_visa_consumo` REAL,
+`ttarjeta_master` INTEGER,
+`ctarjeta_master_transacciones` INTEGER,
+`mtarjeta_master_consumo` REAL,
+`cprestamos_personales` INTEGER,
+`mprestamos_personales` REAL,
+`cprestamos_prendarios` INTEGER,
+`mprestamos_prendarios` REAL,
+`cprestamos_hipotecarios` INTEGER,
+`mprestamos_hipotecarios` REAL,
+`tplazo_fijo` INTEGER,
+`mplazo_fijo_dolares` REAL,
+`mplazo_fijo_pesos` REAL,
+`tfondos_comunes_inversion` INTEGER,
+`mfondos_comunes_inversion_pesos` REAL,
+`mfondos_comunes_inversion_dolares` REAL,
+`ttitulos` INTEGER,
+`mtitulos` REAL,
+`tseguro_vida_mercado_abierto` INTEGER,
+`tseguro_auto` INTEGER,
+`tseguro_vivienda` INTEGER,
+`tseguro_accidentes_personales` INTEGER,
+`tcaja_seguridad` INTEGER,
+`mbonos_corporativos` INTEGER,
+`mmonedas_extranjeras` INTEGER,
+`minversiones_otras` INTEGER,
+`tplan_sueldo` INTEGER,
+`mplan_sueldo` REAL,
+`mplan_sueldo_manual` REAL,
+`cplan_sueldo_transaccion` INTEGER,
+`tcuenta_debitos_automaticos` INTEGER,
+`mcuenta_debitos_automaticos` REAL,
+`ttarjeta_visa_debitos_automaticos` INTEGER,
+`mttarjeta_visa_debitos_automaticos` REAL,
+`ttarjeta_master_debitos_automaticos` INTEGER,
+`mttarjeta_master_debitos_automaticos` REAL,
+`tpagodeservicios` INTEGER,
+`mpagodeservicios` REAL,
+`tpagomiscuentas` INTEGER,
+`mpagomiscuentas` REAL,
+`ccajeros_propios_descuentos` INTEGER,
+`mcajeros_propios_descuentos` REAL,
+`ctarjeta_visa_descuentos` INTEGER,
+`mtarjeta_visa_descuentos` REAL,
+`ctarjeta_master_descuentos` INTEGER,
+`mtarjeta_master_descuentos` REAL,
+`ccuenta_descuentos` INTEGER,
+`mcuenta_descuentos` INTEGER,
+`ccomisiones_mantenimiento` INTEGER,
+`mcomisiones_mantenimiento` REAL,
+`ccomisiones_otras` INTEGER,
+`mcomisiones_otras` REAL,
+`tcambio_monedas` INTEGER,
+`ccambio_monedas_compra` INTEGER,
+`mcambio_monedas_compra` REAL,
+`ccambio_monedas_venta` INTEGER,
+`mcambio_monedas_venta` REAL,
+`ctransferencias_recibidas` INTEGER,
+`mtransferencias_recibidas` REAL,
+`ctransferencias_emitidas` INTEGER,
+`mtransferencias_emitidas` REAL,
+`cextraccion_autoservicio` INTEGER,
+`mextraccion_autoservicio` REAL,
+`ccheques_depositados` INTEGER,
+`mcheques_depositados` REAL,
+`ccheques_emitidos` INTEGER,
+`mcheques_emitidos` REAL,
+`ccheques_depositados_rechazados` INTEGER,
+`mcheques_depositados_rechazados` REAL,
+`ccheques_emitidos_rechazados` INTEGER,
+`mcheques_emitidos_rechazados` REAL,
+`tcallcenter` INTEGER,
+`ccallcenter_transacciones` INTEGER,
+`thomebanking` INTEGER,
+`chomebanking_transacciones` INTEGER,
+`tautoservicio` INTEGER,
+`cautoservicio_transacciones` INTEGER,
+`tcajas` INTEGER,
+`tcajas_consultas` INTEGER,
+`tcajas_depositos` INTEGER,
+`tcajas_extracciones` INTEGER,
+`tcajas_otras` INTEGER,
+`ccajeros_propio_transacciones` INTEGER,
+`mcajeros_propio` REAL,
+`ccajeros_ajenos_transacciones` INTEGER,
+`mcajeros_ajenos` REAL,
+`tmovimientos_ultimos90dias` INTEGER,
+`Master_marca_atraso` INTEGER,
+`Master_cuenta_estado` INTEGER,
+`Master_mfinanciacion_limite` REAL,
+`Master_Fvencimiento` INTEGER,
+`Master_Finiciomora` INTEGER,
+`Master_msaldototal` REAL,
+`Master_msaldopesos` REAL,
+`Master_msaldodolares` REAL,
+`Master_mconsumospesos` REAL,
+`Master_mconsumosdolares` REAL,
+`Master_mlimitecompra` REAL,
+`Master_madelantopesos` REAL,
+`Master_madelantodolares` REAL,
+`Master_fultimo_cierre` INTEGER,
+`Master_mpagado` REAL,
+`Master_mpagospesos` REAL,
+`Master_mpagosdolares` REAL,
+`Master_fechaalta` INTEGER,
+`Master_mconsumototal` REAL,
+`Master_tconsumos` INTEGER,
+`Master_tadelantosefectivo` INTEGER,
+`Master_mpagominimo` REAL,
+`Visa_marca_atraso` INTEGER,
+`Visa_cuenta_estado` INTEGER,
+`Visa_mfinanciacion_limite` REAL,
+`Visa_Fvencimiento` INTEGER,
+`Visa_Finiciomora` INTEGER,
+`Visa_msaldototal` REAL,
+`Visa_msaldopesos` REAL,
+`Visa_msaldodolares` REAL,
+`Visa_mconsumospesos` REAL,
+`Visa_mconsumosdolares` REAL,
+`Visa_mlimitecompra` REAL,
+`Visa_madelantopesos` REAL,
+`Visa_madelantodolares` REAL,
+`Visa_fultimo_cierre` INTEGER,
+`Visa_mpagado` REAL,
+`Visa_mpagospesos` REAL,
+`Visa_mpagosdolares` REAL,
+`Visa_fechaalta` INTEGER,
+`Visa_mconsumototal` REAL,
+`Visa_tconsumos` INTEGER,
+`Visa_tadelantosefectivo` INTEGER,
+`Visa_mpagominimo` REAL,
+`clase_ternaria` TEXT
+);
+
+CREATE INDEX idx_foto ON periodos (foto_mes);
+
+.mode tabs
+
+BEGIN TRANSACTION;
+
+.import 201601_dias.txt periodos_tmp
+INSERT INTO periodos SELECT * FROM periodos_tmp; DROP TABLE periodos_tmp;
+.import 201602_dias.txt periodos
+.import 201603_dias.txt periodos
+.import 201604_dias.txt periodos
+.import 201605_dias.txt periodos
+.import 201606_dias.txt periodos
+.import 201607_dias.txt periodos
+.import 201608_dias.txt periodos
+.import 201609_dias.txt periodos
+.import 201610_dias.txt periodos
+.import 201611_dias.txt periodos
+.import 201612_dias.txt periodos
+.import 201701_dias.txt periodos
+.import 201702_dias.txt periodos
+.import 201703_dias.txt periodos
+.import 201704_dias.txt periodos
+.import 201705_dias.txt periodos
+.import 201706_dias.txt periodos
+.import 201707_dias.txt periodos
+.import 201708_dias.txt periodos
+.import 201709_dias.txt periodos
+.import 201710_dias.txt periodos
+.import 201711_dias.txt periodos
+.import 201712_dias.txt periodos
+.import 201801_dias.txt periodos
+.import 201802_dias.txt periodos
+.import 201803_dias.txt periodos
+.import 201804_dias.txt periodos
+.import 201805_dias.txt periodos
+.import 201806_dias.txt periodos
+
+
+UPDATE periodos SET marketing_activo_ultimos90dias = NULL WHERE marketing_activo_ultimos90dias = '';
+UPDATE periodos SET cliente_vip = NULL WHERE cliente_vip = '';
+UPDATE periodos SET internet = NULL WHERE internet = '';
+UPDATE periodos SET cliente_edad = NULL WHERE cliente_edad = '';
+UPDATE periodos SET cliente_antiguedad = NULL WHERE cliente_antiguedad = '';
+UPDATE periodos SET mrentabilidad = NULL WHERE mrentabilidad = '';
+UPDATE periodos SET mrentabilidad_annual = NULL WHERE mrentabilidad_annual = '';
+UPDATE periodos SET mcomisiones = NULL WHERE mcomisiones = '';
+UPDATE periodos SET mactivos_margen = NULL WHERE mactivos_margen = '';
+UPDATE periodos SET mpasivos_margen = NULL WHERE mpasivos_margen = '';
+UPDATE periodos SET marketing_coss_selling = NULL WHERE marketing_coss_selling = '';
+UPDATE periodos SET tpaquete1 = NULL WHERE tpaquete1 = '';
+UPDATE periodos SET tpaquete2 = NULL WHERE tpaquete2 = '';
+UPDATE periodos SET tpaquete3 = NULL WHERE tpaquete3 = '';
+UPDATE periodos SET tpaquete4 = NULL WHERE tpaquete4 = '';
+UPDATE periodos SET tpaquete5 = NULL WHERE tpaquete5 = '';
+UPDATE periodos SET tpaquete6 = NULL WHERE tpaquete6 = '';
+UPDATE periodos SET tpaquete7 = NULL WHERE tpaquete7 = '';
+UPDATE periodos SET tpaquete8 = NULL WHERE tpaquete8 = '';
+UPDATE periodos SET tpaquete9 = NULL WHERE tpaquete9 = '';
+UPDATE periodos SET tcuentas = NULL WHERE tcuentas = '';
+UPDATE periodos SET tcuenta_corriente = NULL WHERE tcuenta_corriente = '';
+UPDATE periodos SET mcuenta_corriente_Nopaquete = NULL WHERE mcuenta_corriente_Nopaquete = '';
+UPDATE periodos SET mcuenta_corriente_Paquete = NULL WHERE mcuenta_corriente_Paquete = '';
+UPDATE periodos SET mcuenta_corriente_dolares = NULL WHERE mcuenta_corriente_dolares = '';
+UPDATE periodos SET tcaja_ahorro = NULL WHERE tcaja_ahorro = '';
+UPDATE periodos SET mcaja_ahorro_Paquete = NULL WHERE mcaja_ahorro_Paquete = '';
+UPDATE periodos SET mcaja_ahorro_Nopaquete = NULL WHERE mcaja_ahorro_Nopaquete = '';
+UPDATE periodos SET mcaja_ahorro_dolares = NULL WHERE mcaja_ahorro_dolares = '';
+UPDATE periodos SET mdescubierto_preacordado = NULL WHERE mdescubierto_preacordado = '';
+UPDATE periodos SET mcuentas_saldo = NULL WHERE mcuentas_saldo = '';
+UPDATE periodos SET ttarjeta_debito = NULL WHERE ttarjeta_debito = '';
+UPDATE periodos SET ctarjeta_debito_transacciones = NULL WHERE ctarjeta_debito_transacciones = '';
+UPDATE periodos SET mautoservicio = NULL WHERE mautoservicio = '';
+UPDATE periodos SET ttarjeta_visa = NULL WHERE ttarjeta_visa = '';
+UPDATE periodos SET ctarjeta_visa_transacciones = NULL WHERE ctarjeta_visa_transacciones = '';
+UPDATE periodos SET mtarjeta_visa_consumo = NULL WHERE mtarjeta_visa_consumo = '';
+UPDATE periodos SET ttarjeta_master = NULL WHERE ttarjeta_master = '';
+UPDATE periodos SET ctarjeta_master_transacciones = NULL WHERE ctarjeta_master_transacciones = '';
+UPDATE periodos SET mtarjeta_master_consumo = NULL WHERE mtarjeta_master_consumo = '';
+UPDATE periodos SET cprestamos_personales = NULL WHERE cprestamos_personales = '';
+UPDATE periodos SET mprestamos_personales = NULL WHERE mprestamos_personales = '';
+UPDATE periodos SET cprestamos_prendarios = NULL WHERE cprestamos_prendarios = '';
+UPDATE periodos SET mprestamos_prendarios = NULL WHERE mprestamos_prendarios = '';
+UPDATE periodos SET cprestamos_hipotecarios = NULL WHERE cprestamos_hipotecarios = '';
+UPDATE periodos SET mprestamos_hipotecarios = NULL WHERE mprestamos_hipotecarios = '';
+UPDATE periodos SET tplazo_fijo = NULL WHERE tplazo_fijo = '';
+UPDATE periodos SET mplazo_fijo_dolares = NULL WHERE mplazo_fijo_dolares = '';
+UPDATE periodos SET mplazo_fijo_pesos = NULL WHERE mplazo_fijo_pesos = '';
+UPDATE periodos SET tfondos_comunes_inversion = NULL WHERE tfondos_comunes_inversion = '';
+UPDATE periodos SET mfondos_comunes_inversion_pesos = NULL WHERE mfondos_comunes_inversion_pesos = '';
+UPDATE periodos SET mfondos_comunes_inversion_dolares = NULL WHERE mfondos_comunes_inversion_dolares = '';
+UPDATE periodos SET ttitulos = NULL WHERE ttitulos = '';
+UPDATE periodos SET mtitulos = NULL WHERE mtitulos = '';
+UPDATE periodos SET tseguro_vida_mercado_abierto = NULL WHERE tseguro_vida_mercado_abierto = '';
+UPDATE periodos SET tseguro_auto = NULL WHERE tseguro_auto = '';
+UPDATE periodos SET tseguro_vivienda = NULL WHERE tseguro_vivienda = '';
+UPDATE periodos SET tseguro_accidentes_personales = NULL WHERE tseguro_accidentes_personales = '';
+UPDATE periodos SET tcaja_seguridad = NULL WHERE tcaja_seguridad = '';
+UPDATE periodos SET mbonos_corporativos = NULL WHERE mbonos_corporativos = '';
+UPDATE periodos SET mmonedas_extranjeras = NULL WHERE mmonedas_extranjeras = '';
+UPDATE periodos SET minversiones_otras = NULL WHERE minversiones_otras = '';
+UPDATE periodos SET tplan_sueldo = NULL WHERE tplan_sueldo = '';
+UPDATE periodos SET mplan_sueldo = NULL WHERE mplan_sueldo = '';
+UPDATE periodos SET mplan_sueldo_manual = NULL WHERE mplan_sueldo_manual = '';
+UPDATE periodos SET cplan_sueldo_transaccion = NULL WHERE cplan_sueldo_transaccion = '';
+UPDATE periodos SET tcuenta_debitos_automaticos = NULL WHERE tcuenta_debitos_automaticos = '';
+UPDATE periodos SET mcuenta_debitos_automaticos = NULL WHERE mcuenta_debitos_automaticos = '';
+UPDATE periodos SET ttarjeta_visa_debitos_automaticos = NULL WHERE ttarjeta_visa_debitos_automaticos = '';
+UPDATE periodos SET mttarjeta_visa_debitos_automaticos = NULL WHERE mttarjeta_visa_debitos_automaticos = '';
+UPDATE periodos SET ttarjeta_master_debitos_automaticos = NULL WHERE ttarjeta_master_debitos_automaticos = '';
+UPDATE periodos SET mttarjeta_master_debitos_automaticos = NULL WHERE mttarjeta_master_debitos_automaticos = '';
+UPDATE periodos SET tpagodeservicios = NULL WHERE tpagodeservicios = '';
+UPDATE periodos SET mpagodeservicios = NULL WHERE mpagodeservicios = '';
+UPDATE periodos SET tpagomiscuentas = NULL WHERE tpagomiscuentas = '';
+UPDATE periodos SET mpagomiscuentas = NULL WHERE mpagomiscuentas = '';
+UPDATE periodos SET ccajeros_propios_descuentos = NULL WHERE ccajeros_propios_descuentos = '';
+UPDATE periodos SET mcajeros_propios_descuentos = NULL WHERE mcajeros_propios_descuentos = '';
+UPDATE periodos SET ctarjeta_visa_descuentos = NULL WHERE ctarjeta_visa_descuentos = '';
+UPDATE periodos SET mtarjeta_visa_descuentos = NULL WHERE mtarjeta_visa_descuentos = '';
+UPDATE periodos SET ctarjeta_master_descuentos = NULL WHERE ctarjeta_master_descuentos = '';
+UPDATE periodos SET mtarjeta_master_descuentos = NULL WHERE mtarjeta_master_descuentos = '';
+UPDATE periodos SET ccuenta_descuentos = NULL WHERE ccuenta_descuentos = '';
+UPDATE periodos SET mcuenta_descuentos = NULL WHERE mcuenta_descuentos = '';
+UPDATE periodos SET ccomisiones_mantenimiento = NULL WHERE ccomisiones_mantenimiento = '';
+UPDATE periodos SET mcomisiones_mantenimiento = NULL WHERE mcomisiones_mantenimiento = '';
+UPDATE periodos SET ccomisiones_otras = NULL WHERE ccomisiones_otras = '';
+UPDATE periodos SET mcomisiones_otras = NULL WHERE mcomisiones_otras = '';
+UPDATE periodos SET tcambio_monedas = NULL WHERE tcambio_monedas = '';
+UPDATE periodos SET ccambio_monedas_compra = NULL WHERE ccambio_monedas_compra = '';
+UPDATE periodos SET mcambio_monedas_compra = NULL WHERE mcambio_monedas_compra = '';
+UPDATE periodos SET ccambio_monedas_venta = NULL WHERE ccambio_monedas_venta = '';
+UPDATE periodos SET mcambio_monedas_venta = NULL WHERE mcambio_monedas_venta = '';
+UPDATE periodos SET ctransferencias_recibidas = NULL WHERE ctransferencias_recibidas = '';
+UPDATE periodos SET mtransferencias_recibidas = NULL WHERE mtransferencias_recibidas = '';
+UPDATE periodos SET ctransferencias_emitidas = NULL WHERE ctransferencias_emitidas = '';
+UPDATE periodos SET mtransferencias_emitidas = NULL WHERE mtransferencias_emitidas = '';
+UPDATE periodos SET cextraccion_autoservicio = NULL WHERE cextraccion_autoservicio = '';
+UPDATE periodos SET mextraccion_autoservicio = NULL WHERE mextraccion_autoservicio = '';
+UPDATE periodos SET ccheques_depositados = NULL WHERE ccheques_depositados = '';
+UPDATE periodos SET mcheques_depositados = NULL WHERE mcheques_depositados = '';
+UPDATE periodos SET ccheques_emitidos = NULL WHERE ccheques_emitidos = '';
+UPDATE periodos SET mcheques_emitidos = NULL WHERE mcheques_emitidos = '';
+UPDATE periodos SET ccheques_depositados_rechazados = NULL WHERE ccheques_depositados_rechazados = '';
+UPDATE periodos SET mcheques_depositados_rechazados = NULL WHERE mcheques_depositados_rechazados = '';
+UPDATE periodos SET ccheques_emitidos_rechazados = NULL WHERE ccheques_emitidos_rechazados = '';
+UPDATE periodos SET mcheques_emitidos_rechazados = NULL WHERE mcheques_emitidos_rechazados = '';
+UPDATE periodos SET tcallcenter = NULL WHERE tcallcenter = '';
+UPDATE periodos SET ccallcenter_transacciones = NULL WHERE ccallcenter_transacciones = '';
+UPDATE periodos SET thomebanking = NULL WHERE thomebanking = '';
+UPDATE periodos SET chomebanking_transacciones = NULL WHERE chomebanking_transacciones = '';
+UPDATE periodos SET tautoservicio = NULL WHERE tautoservicio = '';
+UPDATE periodos SET cautoservicio_transacciones = NULL WHERE cautoservicio_transacciones = '';
+UPDATE periodos SET tcajas = NULL WHERE tcajas = '';
+UPDATE periodos SET tcajas_consultas = NULL WHERE tcajas_consultas = '';
+UPDATE periodos SET tcajas_depositos = NULL WHERE tcajas_depositos = '';
+UPDATE periodos SET tcajas_extracciones = NULL WHERE tcajas_extracciones = '';
+UPDATE periodos SET tcajas_otras = NULL WHERE tcajas_otras = '';
+UPDATE periodos SET ccajeros_propio_transacciones = NULL WHERE ccajeros_propio_transacciones = '';
+UPDATE periodos SET mcajeros_propio = NULL WHERE mcajeros_propio = '';
+UPDATE periodos SET ccajeros_ajenos_transacciones = NULL WHERE ccajeros_ajenos_transacciones = '';
+UPDATE periodos SET mcajeros_ajenos = NULL WHERE mcajeros_ajenos = '';
+UPDATE periodos SET tmovimientos_ultimos90dias = NULL WHERE tmovimientos_ultimos90dias = '';
+UPDATE periodos SET Master_marca_atraso = NULL WHERE Master_marca_atraso = '';
+UPDATE periodos SET Master_cuenta_estado = NULL WHERE Master_cuenta_estado = '';
+UPDATE periodos SET Master_mfinanciacion_limite = NULL WHERE Master_mfinanciacion_limite = '';
+UPDATE periodos SET Master_Fvencimiento = NULL WHERE Master_Fvencimiento = '';
+UPDATE periodos SET Master_Finiciomora = NULL WHERE Master_Finiciomora = '';
+UPDATE periodos SET Master_msaldototal = NULL WHERE Master_msaldototal = '';
+UPDATE periodos SET Master_msaldopesos = NULL WHERE Master_msaldopesos = '';
+UPDATE periodos SET Master_msaldodolares = NULL WHERE Master_msaldodolares = '';
+UPDATE periodos SET Master_mconsumospesos = NULL WHERE Master_mconsumospesos = '';
+UPDATE periodos SET Master_mconsumosdolares = NULL WHERE Master_mconsumosdolares = '';
+UPDATE periodos SET Master_mlimitecompra = NULL WHERE Master_mlimitecompra = '';
+UPDATE periodos SET Master_madelantopesos = NULL WHERE Master_madelantopesos = '';
+UPDATE periodos SET Master_madelantodolares = NULL WHERE Master_madelantodolares = '';
+UPDATE periodos SET Master_fultimo_cierre = NULL WHERE Master_fultimo_cierre = '';
+UPDATE periodos SET Master_mpagado = NULL WHERE Master_mpagado = '';
+UPDATE periodos SET Master_mpagospesos = NULL WHERE Master_mpagospesos = '';
+UPDATE periodos SET Master_mpagosdolares = NULL WHERE Master_mpagosdolares = '';
+UPDATE periodos SET Master_fechaalta = NULL WHERE Master_fechaalta = '';
+UPDATE periodos SET Master_mconsumototal = NULL WHERE Master_mconsumototal = '';
+UPDATE periodos SET Master_tconsumos = NULL WHERE Master_tconsumos = '';
+UPDATE periodos SET Master_tadelantosefectivo = NULL WHERE Master_tadelantosefectivo = '';
+UPDATE periodos SET Master_mpagominimo = NULL WHERE Master_mpagominimo = '';
+UPDATE periodos SET Visa_marca_atraso = NULL WHERE Visa_marca_atraso = '';
+UPDATE periodos SET Visa_cuenta_estado = NULL WHERE Visa_cuenta_estado = '';
+UPDATE periodos SET Visa_mfinanciacion_limite = NULL WHERE Visa_mfinanciacion_limite = '';
+UPDATE periodos SET Visa_Fvencimiento = NULL WHERE Visa_Fvencimiento = '';
+UPDATE periodos SET Visa_Finiciomora = NULL WHERE Visa_Finiciomora = '';
+UPDATE periodos SET Visa_msaldototal = NULL WHERE Visa_msaldototal = '';
+UPDATE periodos SET Visa_msaldopesos = NULL WHERE Visa_msaldopesos = '';
+UPDATE periodos SET Visa_msaldodolares = NULL WHERE Visa_msaldodolares = '';
+UPDATE periodos SET Visa_mconsumospesos = NULL WHERE Visa_mconsumospesos = '';
+UPDATE periodos SET Visa_mconsumosdolares = NULL WHERE Visa_mconsumosdolares = '';
+UPDATE periodos SET Visa_mlimitecompra = NULL WHERE Visa_mlimitecompra = '';
+UPDATE periodos SET Visa_madelantopesos = NULL WHERE Visa_madelantopesos = '';
+UPDATE periodos SET Visa_madelantodolares = NULL WHERE Visa_madelantodolares = '';
+UPDATE periodos SET Visa_fultimo_cierre = NULL WHERE Visa_fultimo_cierre = '';
+UPDATE periodos SET Visa_mpagado = NULL WHERE Visa_mpagado = '';
+UPDATE periodos SET Visa_mpagospesos = NULL WHERE Visa_mpagospesos = '';
+UPDATE periodos SET Visa_mpagosdolares = NULL WHERE Visa_mpagosdolares = '';
+UPDATE periodos SET Visa_fechaalta = NULL WHERE Visa_fechaalta = '';
+UPDATE periodos SET Visa_mconsumototal = NULL WHERE Visa_mconsumototal = '';
+UPDATE periodos SET Visa_tconsumos = NULL WHERE Visa_tconsumos = '';
+UPDATE periodos SET Visa_tadelantosefectivo = NULL WHERE Visa_tadelantosefectivo = '';
+UPDATE periodos SET Visa_mpagominimo = NULL WHERE Visa_mpagominimo = '';
+UPDATE periodos SET clase_ternaria = NULL WHERE clase_ternaria = '';
+
+END TRANSACTION;
+
+--VACUUM;
+
+.quit
