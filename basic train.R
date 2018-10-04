@@ -12,6 +12,8 @@ datasets_location <- 'D:\\maestriadm\\dm economia finanzas\\bankchurn\\dias\\'
 
 memory.limit(8192)
 
+DEFAULT_CUTOFF <- 0.025
+
 #train_periods <- c(201802)
 train_periods <- c(201801, 201712, 201711)
 #train_periods <- c(201802, 201801, 201712, 201711, 201710, 201709, 201708)
@@ -112,8 +114,8 @@ predictions_prob_testing <- catboost.predict(model, test_pool, prediction_type =
 	
 invisible(gc())
 	
-cutoffs <- seq(0, 0.1, by = 0.0005)
-#cutoffs <- seq(0, 0.05, by = 0.0005)
+cutoffs <- seq(0, 0.1, by = 0.001)
+#cutoffs <- seq(0, 0.05, by = 0.001)
 	
 profits <- sapply(cutoffs, calculate_profit, predictions_prob_testing, data_test$target)
 profit_data <- data.frame(cutoff = cutoffs, profit = profits)
@@ -123,13 +125,13 @@ max_profit_cutoff <- profit_data[profit_data$profit == max(profit_data$profit), 
 ggplot(profit_data, aes(x = cutoff, y = profit)) +
 		geom_line() +
 		geom_vline(aes(xintercept = max_profit_cutoff), color='red', linetype=2) + 
-		geom_vline(aes(xintercept = 0.025), color='green', linetype=2) +
+		geom_vline(aes(xintercept = DEFAULT_CUTOFF), color='green', linetype=2) +
 		geom_hline(aes(yintercept = max(profit_data)), color='blue', linetype=2) +
 		scale_y_continuous("Profit", breaks = sort(c(seq(min(profit_data), max(profit_data), length.out=6)))) +
 		scale_x_continuous("Cutoff") +
 		geom_text(aes(max_profit_cutoff, max(profit_data) - (max(profit_data) * 0.2), label = max_profit_cutoff), size = 4) +
 		geom_text(aes(max_profit_cutoff, max(profit_data) + (max(profit_data) * 0.2), label = paste0("$", formatC(max(profit_data), format="f", digits=0, big.mark=".", decimal.mark = ','))), size = 4) +
-		geom_text(aes(0.025, 0, label = paste0("$", formatC(profit_data[profit_data$cutoff == 0.025, ]$profit, format="f", digits=0, big.mark=".", decimal.mark = ','))), size = 4) +
+		geom_text(aes(DEFAULT_CUTOFF, 0, label = paste0("$", formatC(profit_data[profit_data$cutoff == DEFAULT_CUTOFF, ]$profit, format="f", digits=0, big.mark=".", decimal.mark = ','))), size = 4) +
 		theme_minimal()
 
 AUC(y_pred = predictions_prob_training, y_true = data_train$target)
