@@ -4,7 +4,7 @@ invisible(gc())
 library(catboost)
 library(data.table)
 library(dplyr)
-library(MLmetrics)
+library(Metrics)
 library(ggplot2)
 
 
@@ -14,8 +14,8 @@ memory.limit(8192)
 
 DEFAULT_CUTOFF <- 0.025
 
-#train_periods <- c(201802)
-train_periods <- c(201801, 201712, 201711)
+train_periods <- c(201802)
+#train_periods <- c(201801, 201712, 201711)
 #train_periods <- c(201802, 201801, 201712, 201711, 201710, 201709, 201708)
 #train_periods <- c(201802, 201801, 201712)
 
@@ -23,17 +23,17 @@ train_periods <- c(201801, 201712, 201711)
 data_train <- do.call(rbind, lapply(train_periods, function(period) fread(paste0(datasets_location, period,'_dias.txt'), header = TRUE, sep = "\t")))
 data_train <- data_train[sample(1:nrow(data_train)), ] 
 
-glimpse(data_train)
+#glimpse(data_train)
 
 data_test <- fread(paste0(datasets_location, '201804_dias.txt'), header = TRUE, sep = "\t")
 
-data_structure <- data.frame(class = sapply(data_train, class))
-data_structure$field <- rownames(data_structure)
-rownames(data_structure) <- NULL
-
-data_structure %>% 
-	group_by(class) %>% 
-	summarise(n = n())
+#data_structure <- data.frame(class = sapply(data_train, class))
+#data_structure$field <- rownames(data_structure)
+#rownames(data_structure) <- NULL
+#
+#data_structure %>% 
+#	group_by(class) %>% 
+#	summarise(n = n())
 
 useless_columns <- c('numero_de_cliente',
 'foto_mes')
@@ -60,9 +60,35 @@ useless_columns <- c('numero_de_cliente',
 #'tautoservicio',
 #'cautoservicio_transacciones')
 
+
+
+#downsampling
+#cantbajas <- round(nrow(data_train[data_train$clase_ternaria != 'CONTINUA',]) * 1.50)
+#rowsContinua <- sample(which(data_train$clase_ternaria == 'CONTINUA'), size = cantbajas)
+#rowsBaja <- which(data_train$clase_ternaria != 'CONTINUA')
+#data_train <- data_train[c(rowsContinua,rowsBaja), ]
+#data_train <- data_train[sample(1:nrow(data_train)), ]
+
+#oversampling
+#cantbajas <- round(nrow(data_train[data_train$clase_ternaria == 'BAJA+2',]) * 50)
+#rowsBaja <- which(data_train$clase_ternaria == 'BAJA+2')
+#rowsBaja <- sample(rowsBaja, size = cantbajas, replace = TRUE)
+#data_train <- rbind(data_train, data_train[rowsBaja, ])
+#data_train <- data_train[sample(1:nrow(data_train)), ]
+
+
+#smote con rose
+#library(ROSE)
+#data.rose <- ROSE(clase_ternaria ~ ., data = data_train[data_train$clase_ternaria != 'BAJA+1',], N = 50000, p = 0.99, seed = 1)$data
+#data_train <- rbind(data_train, data.rose[data.rose$clase_ternaria == 'BAJA+2',]) 
+#probar con library(smotefamily)
+
+
 data_train[, useless_columns] <- NULL
 data_train$target <- ifelse(data_train$clase_ternaria == 'CONTINUA', 0, 1)
 data_train$clase_ternaria <- NULL
+
+
 
 data_test[, useless_columns] <- NULL
 data_test$target <- ifelse(data_test$clase_ternaria == 'BAJA+2', 1, 0)
@@ -102,11 +128,11 @@ fit_params <- list(
 model <- catboost.train(train_pool, NULL, fit_params)
 
 	
-features_importance <- catboost.get_feature_importance(model, 
-		pool = train_pool, 
-		fstr_type = "FeatureImportance",
-		thread_count = -1)
-features_importance <- data.frame(feature = attr(features_importance,"names"), importance = features_importance)
+#features_importance <- catboost.get_feature_importance(model, 
+#		pool = train_pool, 
+#		fstr_type = "FeatureImportance",
+#		thread_count = -1)
+#features_importance <- data.frame(feature = attr(features_importance,"names"), importance = features_importance)
 
 	
 predictions_prob_training <- catboost.predict(model, train_pool, prediction_type = 'Probability')
@@ -134,7 +160,7 @@ ggplot(profit_data, aes(x = cutoff, y = profit)) +
 		geom_text(aes(DEFAULT_CUTOFF, 0, label = paste0("$", formatC(profit_data[profit_data$cutoff == DEFAULT_CUTOFF, ]$profit, format="f", digits=0, big.mark=".", decimal.mark = ','))), size = 4) +
 		theme_minimal()
 
-AUC(y_pred = predictions_prob_training, y_true = data_train$target)
-AUC(y_pred = predictions_prob_testing, y_true = data_test$target)
-LogLoss(y_pred = predictions_prob_training, y_true = data_train$target)
-LogLoss(y_pred = predictions_prob_testing, y_true = data_test$target)
+auc(data_train$target, predictions_prob_training)
+auc(data_test$target, predictions_prob_testing)
+logLoss(data_train$target, predictions_prob_training)
+logLoss(data_test$target, predictions_prob_testing)

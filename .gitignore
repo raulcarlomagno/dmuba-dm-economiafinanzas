@@ -36,3 +36,4 @@ vignettes/*.pdf
 rsconnect/
 /dias
 /.project
+/train_dir
