@@ -1,5 +1,5 @@
 rm(list = ls())
-gc()
+invisible(gc())
 
 library(catboost)
 #library( "DiceKriging" )
@@ -117,8 +117,8 @@ objetive_function <- makeSingleObjectiveFunction(
 		fn   = catboost_train,
 		par.set = makeParamSet(
 				makeIntegerParam("depth", lower = 1L, upper = 10L),
-				makeIntegerParam("iterations", lower = 250L, upper = 1500L),
-				#makeIntegerParam("iterations", lower = 250L, upper = 500L),
+				#makeIntegerParam("iterations", lower = 250L, upper = 1500L),
+				makeIntegerParam("iterations", lower = 1L, upper = 2L),
 				makeIntegerParam("border_count", lower = 1L, upper = 254L), #subir fix para avisar que con 255 no va. Error in catboost.train(train_pool, NULL, fit_params) : c:/goagent/pipelines/buildmaster/catboost.git/catboost/cuda/gpu_data/compressed_index_builder.h:110: Error: can't proceed some features 
 				makeIntegerParam("l2_leaf_reg", lower = 1, upper = 10),
 				makeNumericParam("learning_rate", lower = 1e-07, upper = 1), #o 1e-06
@@ -134,7 +134,7 @@ objetive_function <- makeSingleObjectiveFunction(
 )
 
 
-mbo_iterations = 150
+mbo_iterations = 5
 
 mbo_control <-  makeMBOControl(propose.points = 1L)
 mbo_control <-  setMBOControlTermination(mbo_control, iters = mbo_iterations)
