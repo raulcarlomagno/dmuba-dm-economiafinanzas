@@ -10,8 +10,6 @@ library(ggplot2)
 
 datasets_location <- 'D:\\maestriadm\\dm economia finanzas\\bankchurn\\dias\\'
 
-memory.limit(8192)
-
 DEFAULT_CUTOFF <- 0.025
 
 train_periods <- c(201802)
@@ -89,7 +87,6 @@ data_train$target <- ifelse(data_train$clase_ternaria == 'CONTINUA', 0, 1)
 data_train$clase_ternaria <- NULL
 
 
-
 data_test[, useless_columns] <- NULL
 data_test$target <- ifelse(data_test$clase_ternaria == 'BAJA+2', 1, 0)
 data_test$clase_ternaria <- NULL
@@ -118,10 +115,10 @@ fit_params <- list(
 		#custom_loss = c('Logloss', 'AUC'),
 		task_type = 'GPU',
 		#ignored_features = c(4,9),
-		#border_count = 128,
+		#border_count = 210,
 		#depth = 6,
 		train_dir = 'train_dir',
-		logging_level = 'Verbose'		
+		logging_level = 'Verbose'
 )
 
 #model <- catboost.train(train_pool, test_pool, fit_params)

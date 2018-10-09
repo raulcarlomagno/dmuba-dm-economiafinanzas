@@ -1,0 +1,40 @@
+train 201802
+test 201804
+
+
+
+best hyperparameters:
+ depth iterations border_count l2_leaf_reg learning_rate     cutoff
+     5        925           95          10    0.09107095 0.04334574
+[1] "profit: $6.124.700"
+
+
+º
+best hyperparameters:
+ depth iterations border_count l2_leaf_reg learning_rate     cutoff
+     5       1161          201           9     0.1365232 0.04023414
+ random_strength bagging_temperature
+               2                   0
+[1] "profit: $6.071.100"
+
+
+
+duracion entrenamineto: Time difference of 30.01818 mins
+best hyperparameters:
+ depth iterations border_count l2_leaf_reg learning_rate     cutoff
+     7        976           72           3    0.05546807 0.04264819
+ cutoff_in_logloss random_strength bagging_temperature
+                 0              15                   1
+[1] "profit: $6.122.300"
+
+
+FALTA PAGAR
+Cliente: 4314348
+Cuenta: 71033185875
+casa $214,52
+
+
+YA ESTA PAGO
+Cliente: 4314348
+Cuenta: 20931423842
+movil $515,71
