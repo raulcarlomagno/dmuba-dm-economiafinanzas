@@ -2,7 +2,6 @@ rm(list = ls())
 invisible(gc())
 
 library(catboost)
-#library( "DiceKriging" )
 library(mlrMBO)
 
 #setwd('D:\\maestriadm\\dm economia finanzas\\bankchurn')
@@ -12,8 +11,9 @@ source('config.R')
 source('dataset_sql.R')
 source('functions.R')
 
-train_periods <- c(201802)
-#train_periods <- c(201801, 201712, 201711)
+#train_periods <- c(201802)
+train_periods <- c(201704, 201703, 201702)
+
 data_train <- get_period(train_periods)
 
 test_periods <- c(201804)
@@ -68,14 +68,14 @@ catboost_train <- function(x = list(
 				learning_rate,
 				#rsm,
 				cutoff,
-				cutoff_in_logloss,
-				random_strength,
-				bagging_temperature
+				#cutoff_in_logloss,
+				random_strength
+				#bagging_temperature
 )){
 	
 	loss_function <- 'Logloss'
-	if(x$cutoff_in_logloss == 1)
-		loss_function <- paste0(loss_function, ':border=', x$cutoff)
+	#if(x$cutoff_in_logloss == 1)
+		#loss_function <- paste0(loss_function, ':border=', x$cutoff)
 	
 	#https://effectiveml.com/using-grid-search-to-optimise-catboost-parameters.html
 	fit_params <- list(
@@ -94,8 +94,8 @@ catboost_train <- function(x = list(
 			train_dir = CONFIG$TRAIN_DIR,
 			#logging_level = 'Verbose'
 			logging_level = 'Silent',
-			random_strength = x$random_strength,
-			bagging_temperature = x$bagging_temperature
+			random_strength = x$random_strength
+			#bagging_temperature = x$bagging_temperature
 	)
 	
 	cat("training with these hyperparameters:\n")
@@ -132,9 +132,9 @@ objetive_function <- makeSingleObjectiveFunction(
 				makeNumericParam("learning_rate", lower = 1e-07, upper = 1), #o 1e-06
 				#makeNumericParam("rsm", lower = 0.01, upper = 1), #rsm on GPU is supported for pairwise modes only
 				makeNumericParam("cutoff", lower = 0.01, upper = 0.1),
-				makeIntegerParam("cutoff_in_logloss", lower = 0L, upper = 1L), #la regresion Kriging no soporta makeLogicalParam
-				makeIntegerParam("random_strength", lower = 1, upper = 20),	
-				makeIntegerParam("bagging_temperature", lower = 0, upper = 1)
+				#makeIntegerParam("cutoff_in_logloss", lower = 0L, upper = 1L), #la regresion Kriging no soporta makeLogicalParam
+				makeIntegerParam("random_strength", lower = 1, upper = 20)
+				#makeIntegerParam("bagging_temperature", lower = 0, upper = 1)
 		),
 		minimize = FALSE,
 		has.simple.signature = FALSE,
@@ -142,7 +142,7 @@ objetive_function <- makeSingleObjectiveFunction(
 )
 
 
-mbo_iterations = 150
+mbo_iterations = 200
 
 mbo_control <-  makeMBOControl(propose.points = 1L)
 mbo_control <-  setMBOControlTermination(mbo_control, iters = mbo_iterations)

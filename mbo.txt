@@ -28,6 +28,30 @@ best hyperparameters:
 [1] "profit: $6.122.300"
 
 
+
+
+best hyperparameters:
+ depth iterations border_count l2_leaf_reg learning_rate random_strength
+    10       1041          153           1    0.02399114               6
+ bagging_temperature
+                   1
+[1] "logloss: 0.0278459296443713"
+profit 0.025 en abril $6.335.000
+profit 0.028 en abril $6.562.000
+
+
+
+CON EL NUEVO PROFIT
+train_periods <- c(201704, 201703, 201702)
+test_periods <- c(201804)
+training with these hyperparameters:
+ depth iterations border_count l2_leaf_reg learning_rate     cutoff
+     6        390          213           8     0.2286994 0.04081841
+ random_strength bagging_temperature
+               8                   0
+[1] "profit: $6.894.600"
+
+
 FALTA PAGAR
 Cliente: 4314348
 Cuenta: 71033185875
