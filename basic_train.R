@@ -2,15 +2,14 @@ rm(list = ls())
 invisible(gc())
 
 library(catboost)
-library(data.table)
+#library(data.table)
 library(dplyr)
 library(Metrics)
 library(ggplot2)
 
 source('config.R')
+source('functions.R')
 source('dataset_sql.R')
-
-DEFAULT_CUTOFF <- 0.025
 
 #train_periods <- c(201802)
 #train_periods <- c(201801, 201712, 201711)
@@ -19,22 +18,26 @@ DEFAULT_CUTOFF <- 0.025
 #train_periods <- c(201802, 201801, 201712)
 
 #train_periods <- c(201705, 201704, 201703, 201702) #winner y testeo en 201804
-train_periods <- c(201704, 201703, 201702) #winner y testeo en 201804
+#train_periods <- c(201704, 201703, 201702) #winner y testeo en 201804
+train_periods <- c(201704, 201703, 201802) #winner y testeo en 201804
+
 #train_periods <- c(201607, 201606, 201605, 201604) #winner y testeo en 201706
-#train_periods <- c( 201606, 201605, 201604) #winner y testeo en 201706
+#train_periods <- c(201606, 201605, 201604) #winner y testeo en 201706
+
 #train_periods <- c(201711, 201712, 201801, 201703, 201702, 201701) #winner y testeo en 201803
 #train_periods <- c(201812, 201702, 201701, 201712) #winner y testeo en 201802
 #train_periods <- c(201612, 201611, 201610) #horrible y testeo en 201712
 #train_periods <- c(201803, 201802, 201801, 201712, 201711, 201710) # y testear en 201804
+############train_periods <- c(201802, 201801, 201712, 201711, 201710, 201709, 201708, 201707)  y teste en 201804, esta es la linea de muerte
+########train_periods <- c(201704, 201703, 201702, 201701, 201612, 201611, 201610, 201609) es la linea de muerte
 
-data_train <- get_period(train_periods, T)
-data_train <- data_train[sample(1:nrow(data_train)), ] 
+data_train <- get_period(train_periods)
 
 #glimpse(data_train)
 
 test_periods <- c(201804)
 #system.time(data_test <- get_period(test_periods, F))
-data_test <- get_period(test_periods, T)
+data_test <- get_period(test_periods)
 
 #data_structure <- data.frame(class = sapply(data_train, class))
 #data_structure$field <- rownames(data_structure)
@@ -96,18 +99,22 @@ useless_columns <- c('numero_de_cliente',
 data_train[, useless_columns] <- NULL
 data_train$target <- ifelse(data_train$clase_ternaria == 'CONTINUA', 0, 1)
 data_train$clase_ternaria <- NULL
+data_train <- calculate_present_features(data_train)
+
 
 data_test[, useless_columns] <- NULL
 data_test$target <- ifelse(data_test$clase_ternaria == 'BAJA+2', 1, 0)
 data_test$clase_ternaria <- NULL
+data_test <- calculate_present_features(data_test)
+
 
 target_index <- c(which(names(data_train) == "target"))
 
 
-data_train <- as.data.frame(data_train)
+#data_train <- as.data.frame(data_train)
 train_pool <- catboost.load_pool(data = data_train[, -target_index], label = data_train[, target_index])
 
-data_test <- as.data.frame(data_test)
+#data_test <- as.data.frame(data_test)
 test_pool <- catboost.load_pool(data = data_test[, -target_index], label = data_test[, target_index])
 
 #table(is.na(data_test[,80]))
@@ -142,14 +149,10 @@ fit_params <- list(
 
 #model <- catboost.train(train_pool, test_pool, fit_params)
 model <- catboost.train(train_pool, NULL, fit_params)
-
 	
-features_importance <- catboost.get_feature_importance(model, 
-		pool = train_pool, 
-		fstr_type = "FeatureImportance",
-		thread_count = -1)
-features_importance <- data.frame(feature = attr(features_importance,"names"), importance = features_importance)
-
+features_importance <- catboost.get_feature_importance(model, pool = train_pool, fstr_type = "FeatureImportance")
+features_importance <- data.frame(feature = dimnames(train_pool)[[2]], importance = features_importance)
+#features_importance <- data.frame(feature = attr(features_importance, "names"), importance = features_importance)
 	
 predictions_prob_training <- catboost.predict(model, train_pool, prediction_type = 'Probability')
 predictions_prob_testing <- catboost.predict(model, test_pool, prediction_type = 'Probability') 
@@ -162,19 +165,19 @@ cutoffs <- seq(0, 0.1, by = 0.001)
 profits <- sapply(cutoffs, calculate_profit, predictions_prob_testing, data_test$target)
 profit_data <- data.frame(cutoff = cutoffs, profit = profits)
 
-max_profit_cutoff <- profit_data[profit_data$profit == max(profit_data$profit),]$cutoff
-profit_default_cuttof <- profit_data[profit_data$cutoff == DEFAULT_CUTOFF,]$profit
+max_profit_cutoff <- min(profit_data[profit_data$profit == max(profit_data$profit),]$cutoff)
+profit_default_cuttof <- profit_data[profit_data$cutoff == CONFIG$DEFAULT_CUTOFF,]$profit
 
 ggplot(profit_data, aes(x = cutoff, y = profit)) +
 		geom_line() +
 		geom_vline(aes(xintercept = max_profit_cutoff), color = 'red', linetype = 2) +
-		geom_vline(aes(xintercept = DEFAULT_CUTOFF), color = 'green', linetype = 2) +
+		geom_vline(aes(xintercept = CONFIG$DEFAULT_CUTOFF), color = 'green', linetype = 2) +
 		geom_hline(aes(yintercept = max(profit_data)), color = 'blue', linetype = 2) +
 		scale_y_continuous("Profit", breaks = sort(c(seq(min(profit_data), max(profit_data), length.out = 6)))) +
 		scale_x_continuous("Cutoff") +
 		geom_text(aes(max_profit_cutoff, max(profit_data) - (max(profit_data) * 0.2), label = max_profit_cutoff), size = 4) +
 		geom_text(aes(max_profit_cutoff, max(profit_data) + (max(profit_data) * 0.2), label = paste0("$", formatC(max(profit_data), format = "f", digits = 0, big.mark = ".", decimal.mark = ','))), size = 4) +
-		geom_text(aes(DEFAULT_CUTOFF, 0, label = paste0("$", formatC(profit_default_cuttof, format = "f", digits = 0, big.mark = ".", decimal.mark = ','))), size = 4) +
+		geom_text(aes(CONFIG$DEFAULT_CUTOFF, 0, label = paste0("$", formatC(profit_default_cuttof, format = "f", digits = 0, big.mark = ".", decimal.mark = ','))), size = 4) +
 		theme_minimal()
 
 cat('Training:', train_periods, '\n')

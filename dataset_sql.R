@@ -9,7 +9,7 @@ get_relative_date_sentence <- function(months) {
 get_period <- function(periods, history_fields = FALSE){
 	dataset_connection <- dbConnect(SQLite(), CONFIG$DATASET_FILE, flags = SQLITE_RWC)
 	
-	query <- "SELECT 1"
+	query <- "SELECT p.*"
 
 	if (history_fields) {
 		calculated_fields <- c(query)

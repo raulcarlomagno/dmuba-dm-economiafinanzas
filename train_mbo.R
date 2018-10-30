@@ -4,8 +4,8 @@ invisible(gc())
 library(catboost)
 library(mlrMBO)
 
-#setwd('D:\\maestriadm\\dm economia finanzas\\bankchurn')
-setwd('/home/rcarlomagno/catboost')
+setwd('D:\\maestriadm\\dm economia finanzas\\bankchurn')
+#setwd('/home/rcarlomagno/catboost')
 
 source('config.R')
 source('dataset_sql.R')
@@ -19,30 +19,7 @@ data_train <- get_period(train_periods)
 test_periods <- c(201804)
 data_test <- get_period(test_periods)
 
-useless_columns <- c('numero_de_cliente',
-'foto_mes')
-#'tpaquete1',
-#'tpaquete2',
-#'tpaquete3',
-#'tpaquete4',
-#'tpaquete5',
-#'tpaquete6',
-#'tpaquete8',
-#'mcuenta_corriente_dolares',
-#'cprestamos_hipotecarios',
-#'tplazo_fijo',
-#'mplazo_fijo_pesos',
-#'ttitulos',
-#'mbonos_corporativos',
-#'mmonedas_extranjeras',
-#'minversiones_otras',
-#'mplan_sueldo_manual',
-#'cplan_sueldo_transaccion',
-#'ccuenta_descuentos',
-#'mcuenta_descuentos',
-#'mtransferencias_recibidas',
-#'tautoservicio',
-#'cautoservicio_transacciones')
+useless_columns <- c('numero_de_cliente', 'foto_mes')
 
 data_train[, useless_columns] <- NULL
 data_train$target <- ifelse(data_train$clase_ternaria == 'CONTINUA', 0, 1)
@@ -92,8 +69,8 @@ catboost_train <- function(x = list(
 			l2_leaf_reg = x$l2_leaf_reg,
 			#rsm = x$rsm,
 			train_dir = CONFIG$TRAIN_DIR,
-			#logging_level = 'Verbose'
-			logging_level = 'Silent',
+			logging_level = 'Verbose',
+			#logging_level = 'Silent',
 			random_strength = x$random_strength
 			#bagging_temperature = x$bagging_temperature
 	)
@@ -109,10 +86,15 @@ catboost_train <- function(x = list(
 	invisible(gc())
 	
 	profit <- calculate_profit(x$cutoff, predictions_prob_testing, data_test$target)
+	perfect_profit <- sum(data_test$target) * 11700
 
 	print(paste0("profit: $", formatC(profit, format="f", digits=0, big.mark=".", decimal.mark = ',')))
-	
-	return(profit)
+
+	profit_ratio_cutoff <- round(profit / perfect_profit, 6)
+
+	print(paste('Perfect profit ratio cutoff', profit_ratio_cutoff))
+
+	return(profit_ratio_cutoff)
 }
 
 
@@ -125,8 +107,8 @@ objetive_function <- makeSingleObjectiveFunction(
 		fn   = catboost_train,
 		par.set = makeParamSet(
 				makeIntegerParam("depth", lower = 1L, upper = 10L),
-				makeIntegerParam("iterations", lower = 250L, upper = 1250L),
-				#makeIntegerParam("iterations", lower = 1L, upper = 2L),
+				#makeIntegerParam("iterations", lower = 250L, upper = 1250L),
+				makeIntegerParam("iterations", lower = 1L, upper = 10L),
 				makeIntegerParam("border_count", lower = 2L, upper = 254L), #subir fix para avisar que con 255 no va. Error in catboost.train(train_pool, NULL, fit_params) : c:/goagent/pipelines/buildmaster/catboost.git/catboost/cuda/gpu_data/compressed_index_builder.h:110: Error: can't proceed some features ,  Error: border count should be greater than 0. If you have nan-features, border count should be > 1. Got 1"
 				makeIntegerParam("l2_leaf_reg", lower = 1, upper = 10),
 				makeNumericParam("learning_rate", lower = 1e-07, upper = 1), #o 1e-06
@@ -142,7 +124,7 @@ objetive_function <- makeSingleObjectiveFunction(
 )
 
 
-mbo_iterations = 200
+mbo_iterations = 10
 
 mbo_control <-  makeMBOControl(propose.points = 1L)
 mbo_control <-  setMBOControlTermination(mbo_control, iters = mbo_iterations)
@@ -160,7 +142,8 @@ mbo_end_time - mbo_start_time
 
 cat("best hyperparameters:\n")
 print(data.frame(mbo_result$x), row.names = FALSE )
-print(paste0("profit: $", formatC(mbo_result$y, format="f", digits=0, big.mark=".", decimal.mark = ',')))
+#print(paste0("profit: $", formatC(mbo_result$y, format="f", digits=0, big.mark=".", decimal.mark = ',')))
+print(paste0("Perfect profit ratio cutoff: ", mbo_result$y))
 
 png(paste0(CONFIG$TRAIN_DIR, "mbo.png"), width = 1920, height = 1080)
 plot(mbo_result)
