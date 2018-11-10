@@ -11,13 +11,34 @@ source('config.R')
 source('functions.R')
 source('dataset_sql.R')
 
-remove_columns <- c('tpaquete1','tpaquete2','tpaquete3','tpaquete4','tpaquete5','tpaquete6','tpaquete8')
+remove_columns <- c('tpaquete1', 'tpaquete2', 'tpaquete3', 'tpaquete4', 'tpaquete5', 'tpaquete6', 'tpaquete8')
+tendency_columns <- c(
+	   'mplan_sueldo',
+	   'tplan_sueldo',
+	   'mprestamos_personales',
+	   'mrentabilidad',
+	   'mactivos_margen',
+	   'mcuentas_saldo',
+	   'mtarjeta_visa_consumo',
+	   'mcuenta_corriente_Paquete',
+	   'mpasivos_margen',
+	   'mrentabilidad_annual'
+)
+
+#tendencia para todas
+tendency_columns <- c()
+
+calculate_growth <- FALSE
+calculate_acceleration <- FALSE
+calculate_derived <- FALSE
+
 
 #train_periods <- c(201802, 201801, 201712, 201711, 201710, 201709, 201708) #DEADLINE
 #train_periods <- c(201802, 201801, 201712, 201704, 201703, 201702) #winner
+train_periods <- c(201802, 201801, 201712, 201704, 201702, 201701) #winner NUEVO??
 #train_periods <- c(201802, 201801, 201712, 201702, 201701, 201612) #propuesta por viviana
 
-train_periods <- c(201802)
+#train_periods <- c(201802)
 #train_periods <- c(201801, 201712, 201711)
 #train_periods <- c(201802, 201801, 201712, 201711)
 #train_periods <- c(201802, 201801, 201712, 201711, 201710, 201709, 201708)
@@ -29,6 +50,7 @@ train_periods <- c(201802)
 
 #train_periods <- c(201607, 201606, 201605, 201604) #winner y testeo en 201706
 #train_periods <- c(201606, 201605, 201604) #winner y testeo en 201706
+#train_periods <- c(201704, 201703, 201702, 201606, 201604, 201603) #winner NUEVO??
 
 #train_periods <- c(201711, 201712, 201801, 201703, 201702, 201701) #winner y testeo en 201803
 #train_periods <- c(201812, 201702, 201701, 201712) #winner y testeo en 201802
@@ -39,67 +61,42 @@ train_periods <- c(201802)
 
 #data_train <- get_period(train_periods)
 #data_train <- do.call(rbind, lapply(train_periods, function(period) fread(paste0(CONFIG$DATASETS_PATH, period, '_dias.txt'), header = TRUE, sep = "\t")))
-data_train <- load_dataset(train_periods, remove_columns, TRUE, TRUE, TRUE)
+data_train <- load_dataset(train_periods,
+		 remove_columns,
+		 tendency_columns,
+		 growth = calculate_growth,
+		 acceleration = calculate_acceleration,
+		 derived = calculate_derived
+		 )
 
 #glimpse(data_train)
 
-test_periods <- c(201804)
+
 #system.time(data_test <- get_period(test_periods, F))
 #data_test <- get_period(test_periods)
 #data_test <- do.call(rbind, lapply(test_periods, function(period) fread(paste0(CONFIG$DATASETS_PATH, period, '_dias.txt'), header = TRUE, sep = "\t")))
-data_test <- load_dataset(test_periods, remove_columns, TRUE, TRUE, TRUE)
+test_periods <- c(201804)
+data_test <- load_dataset(test_periods,
+		remove_columns,
+		tendency_columns,
+		growth = calculate_growth,
+		acceleration = calculate_acceleration,
+		derived = calculate_derived
+		)
 
-#data_structure <- data.frame(class = sapply(data_train, class))
-#data_structure$field <- rownames(data_structure)
-#rownames(data_structure) <- NULL
-#
-#data_structure %>% 
-#	group_by(class) %>% 
-#	summarise(n = n())
-
-useless_columns <- c('numero_de_cliente',
-'foto_mes')
-#'tpaquete1',
-#'tpaquete2',
-#'tpaquete3',
-#'tpaquete4',
-#'tpaquete5',
-#'tpaquete6',
-#'tpaquete8',
-#'mcuenta_corriente_dolares',
-#'cprestamos_hipotecarios',
-#'tplazo_fijo')
-
-
-
-data_train[, useless_columns] <- NULL
-#data_train$target <- ifelse(data_train$clase_ternaria == 'CONTINUA', 0, 1)
-data_train[, "target" := ifelse(data_train$clase_ternaria == 'CONTINUA', 0, 1)] #tira warning, mejorar
-#data_train[, "target" := ifelse(data_train$clase_ternaria == 'BAJA+2', 1, 0)] #tira warning, mejorar
-#data_train$clase_ternaria <- NULL
-data_train[, clase_ternaria := NULL]
-#data_train <- calculate_present_features(data_train)
-
-
-data_test[, useless_columns] <- NULL
-data_test$target <- ifelse(data_test$clase_ternaria == 'BAJA+2', 1, 0)
-data_test$clase_ternaria <- NULL
-#data_test <- calculate_present_features(data_test)
-
+useless_columns <- c('numero_de_cliente', 'foto_mes')
+final_preprocess(data_train, useless_columns, TRUE)
+final_preprocess(data_test, useless_columns, FALSE)
 
 target_index <- c(which(names(data_train) == "target"))
-
 
 data_train <- as.data.frame(data_train)
 #setDF(data_train)
 train_pool <- catboost.load_pool(data = data_train[, -target_index], label = data_train[, target_index])
+#train_pool <- catboost.load_pool(data = setDF(data_train)[, -target_index], label = setDF(data_train, "target"))
 
 data_test <- as.data.frame(data_test)
 test_pool <- catboost.load_pool(data = data_test[, -target_index], label = data_test[, target_index])
-
-#table(is.na(data_test[,80]))
-#data_test[is.na(data_test[,80]), 80] <- 0
-
 
 #border <- round(sum(data_train$target) / nrow(data_train), 5)
 
@@ -147,7 +144,6 @@ ggplot(df_prueba, aes(x = prob, y = profit_acum)) +
 	scale_x_continuous(labels = function(x) format(x, scientific = FALSE))
 
 
-	
 cutoffs <- seq(0, 0.1, by = 0.001)
 #cutoffs <- seq(0, 0.05, by = 0.001)
 	

@@ -9,6 +9,18 @@ format_money <- function(value) {
 	paste0("$", formatC(value, format = "f", digits = 0, big.mark = ".", decimal.mark = ','))
 }
 
+final_preprocess <- function(df, useless_columns, is_train = TRUE) {
+	df[, (useless_columns) := NULL]
+	if (is_train) {
+		#mejorar
+		df[, target := ifelse(df$clase_ternaria == 'CONTINUA', 0, 1)]
+	} else {
+		#mejorar
+		df[, target := ifelse(df$clase_ternaria == 'BAJA+2', 1, 0)]
+	}	
+	df[, clase_ternaria := NULL]
+}
+
 calculate_backward_months <- function(period, quantity) {
 
 	counter <- 0
@@ -37,12 +49,15 @@ calculate_backward_months <- function(period, quantity) {
 
 
 
-load_dataset <- function(periods, remove_columns, growth = TRUE, acceleration = TRUE, derived = FALSE) {
+load_dataset <- function(periods, remove_columns, columns_for_tendency = c(), growth = TRUE, acceleration = TRUE, derived = FALSE) {
 	backward <- 3 #3 meses pa tras
 	final_data <- NULL	
 
 	for (period in periods) {
-		needed_periods <- calculate_backward_months(period, backward)
+		needed_periods <- period
+		if (growth || acceleration) {
+			needed_periods <- calculate_backward_months(period, backward)
+		}
 
 		data <- do.call(rbind, lapply(needed_periods, function(period1) fread(paste0(CONFIG$DATASETS_PATH, period1, '_dias.txt'), header = TRUE, sep = "\t")))
 
@@ -87,8 +102,12 @@ load_dataset <- function(periods, remove_columns, growth = TRUE, acceleration = 
 		  period3 <- needed_periods[4]
 		  
 		  #tendency_columns <- c("mplan_sueldo", "mcuentas_saldo", "mrentabilidad")
-		  avoid_tendency_columns <- c("numero_de_cliente", "foto_mes", "clase_ternaria")
-		  tendency_columns <- setdiff(colnames(data), avoid_tendency_columns)
+			avoid_tendency_columns <- c("numero_de_cliente", "foto_mes", "clase_ternaria")
+
+			if (length(columns_for_tendency) == 0)
+				columns_for_tendency <- colnames(data)
+
+			tendency_columns <- setdiff(columns_for_tendency, avoid_tendency_columns)
 		  
 		  y0 <- data[foto_mes == period0, ..tendency_columns]
 		  y0[is.na(y0)] <- 0
@@ -109,10 +128,10 @@ load_dataset <- function(periods, remove_columns, growth = TRUE, acceleration = 
 
 		  if(growth){
 		    crecimiento_df <- (y2 - 4 * y1 + 3 * y0) / 2  
-		    colnames(crecimiento_df) <- paste0(colnames(crecimiento_df), "_crec")
+		    colnames(crecimiento_df) <- paste0(colnames(crecimiento_df), "__CREC")
 			crecimiento_df <- scale(crecimiento_df)
 			crecimiento_df <- as.data.frame(crecimiento_df)
-		    #crecimiento_df <- data.frame(lapply(crecimiento_df, function(col) { round(scales::rescale(col, to = c(0, 100)), 2) }))
+		    #crecimiento_df <- data.frame(lapply(crecimiento_df, function(col) { round(scales::rescale(-col, to = c(-100, 100)), 2) }))
 			
 		    data_period[, colnames(crecimiento_df) := as.list(crecimiento_df)]
 		  }		  
@@ -120,10 +139,10 @@ load_dataset <- function(periods, remove_columns, growth = TRUE, acceleration = 
 		  
 		  if(acceleration){
 		    aceleracion_df <- (-y3 + 4 * y2 - 5 * y1 + 2 * y0)
-		    colnames(aceleracion_df) <- paste0(colnames(aceleracion_df), "_acel")
+		    colnames(aceleracion_df) <- paste0(colnames(aceleracion_df), "__ACEL")
 			aceleracion_df <- scale(aceleracion_df)
 			aceleracion_df <- as.data.frame(aceleracion_df)
-		    #aceleracion_df <- data.frame(lapply(aceleracion_df, function(col) { round(scales::rescale(col, to = c(0, 100)), 2) }))
+		    #aceleracion_df <- data.frame(lapply(aceleracion_df, function(col) { round(scales::rescale(-col, to = c(-100, 100)), 2) }))
 		    
 		    data_period[, colnames(aceleracion_df) := as.list(aceleracion_df)]
 		  }
