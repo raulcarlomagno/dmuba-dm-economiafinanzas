@@ -2,7 +2,7 @@ rm(list = ls())
 invisible(gc())
 
 library(catboost)
-#library(data.table)
+library(data.table)
 library(dplyr)
 library(Metrics)
 library(ggplot2)
@@ -11,7 +11,13 @@ source('config.R')
 source('functions.R')
 source('dataset_sql.R')
 
-#train_periods <- c(201802)
+remove_columns <- c('tpaquete1','tpaquete2','tpaquete3','tpaquete4','tpaquete5','tpaquete6','tpaquete8')
+
+#train_periods <- c(201802, 201801, 201712, 201711, 201710, 201709, 201708) #DEADLINE
+#train_periods <- c(201802, 201801, 201712, 201704, 201703, 201702) #winner
+#train_periods <- c(201802, 201801, 201712, 201702, 201701, 201612) #propuesta por viviana
+
+train_periods <- c(201802)
 #train_periods <- c(201801, 201712, 201711)
 #train_periods <- c(201802, 201801, 201712, 201711)
 #train_periods <- c(201802, 201801, 201712, 201711, 201710, 201709, 201708)
@@ -19,7 +25,7 @@ source('dataset_sql.R')
 
 #train_periods <- c(201705, 201704, 201703, 201702) #winner y testeo en 201804
 #train_periods <- c(201704, 201703, 201702) #winner y testeo en 201804
-train_periods <- c(201704, 201703, 201802) #winner y testeo en 201804
+#train_periods <- c(201704, 201703, 201802) #winner y testeo en 201804
 
 #train_periods <- c(201607, 201606, 201605, 201604) #winner y testeo en 201706
 #train_periods <- c(201606, 201605, 201604) #winner y testeo en 201706
@@ -31,13 +37,17 @@ train_periods <- c(201704, 201703, 201802) #winner y testeo en 201804
 ############train_periods <- c(201802, 201801, 201712, 201711, 201710, 201709, 201708, 201707)  y teste en 201804, esta es la linea de muerte
 ########train_periods <- c(201704, 201703, 201702, 201701, 201612, 201611, 201610, 201609) es la linea de muerte
 
-data_train <- get_period(train_periods)
+#data_train <- get_period(train_periods)
+#data_train <- do.call(rbind, lapply(train_periods, function(period) fread(paste0(CONFIG$DATASETS_PATH, period, '_dias.txt'), header = TRUE, sep = "\t")))
+data_train <- load_dataset(train_periods, remove_columns, TRUE, TRUE, TRUE)
 
 #glimpse(data_train)
 
 test_periods <- c(201804)
 #system.time(data_test <- get_period(test_periods, F))
-data_test <- get_period(test_periods)
+#data_test <- get_period(test_periods)
+#data_test <- do.call(rbind, lapply(test_periods, function(period) fread(paste0(CONFIG$DATASETS_PATH, period, '_dias.txt'), header = TRUE, sep = "\t")))
+data_test <- load_dataset(test_periods, remove_columns, TRUE, TRUE, TRUE)
 
 #data_structure <- data.frame(class = sapply(data_train, class))
 #data_structure$field <- rownames(data_structure)
@@ -58,92 +68,56 @@ useless_columns <- c('numero_de_cliente',
 #'tpaquete8',
 #'mcuenta_corriente_dolares',
 #'cprestamos_hipotecarios',
-#'tplazo_fijo',
-#'mplazo_fijo_pesos',
-#'ttitulos',
-#'mbonos_corporativos',
-#'mmonedas_extranjeras',
-#'minversiones_otras',
-#'mplan_sueldo_manual',
-#'cplan_sueldo_transaccion',
-#'ccuenta_descuentos',
-#'mcuenta_descuentos',
-#'mtransferencias_recibidas',
-#'tautoservicio',
-#'cautoservicio_transacciones')
+#'tplazo_fijo')
 
-
-
-#downsampling
-#cantbajas <- round(nrow(data_train[data_train$clase_ternaria != 'CONTINUA',]) * 1.50)
-#rowsContinua <- sample(which(data_train$clase_ternaria == 'CONTINUA'), size = cantbajas)
-#rowsBaja <- which(data_train$clase_ternaria != 'CONTINUA')
-#data_train <- data_train[c(rowsContinua,rowsBaja), ]
-#data_train <- data_train[sample(1:nrow(data_train)), ]
-
-#oversampling
-#cantbajas <- round(nrow(data_train[data_train$clase_ternaria == 'BAJA+2',]) * 50)
-#rowsBaja <- which(data_train$clase_ternaria == 'BAJA+2')
-#rowsBaja <- sample(rowsBaja, size = cantbajas, replace = TRUE)
-#data_train <- rbind(data_train, data_train[rowsBaja, ])
-#data_train <- data_train[sample(1:nrow(data_train)), ]
-
-
-#smote con rose
-#library(ROSE)
-#data.rose <- ROSE(clase_ternaria ~ ., data = data_train[data_train$clase_ternaria != 'BAJA+1',], N = 50000, p = 0.99, seed = 1)$data
-#data_train <- rbind(data_train, data.rose[data.rose$clase_ternaria == 'BAJA+2',]) 
-#probar con library(smotefamily)
 
 
 data_train[, useless_columns] <- NULL
-data_train$target <- ifelse(data_train$clase_ternaria == 'CONTINUA', 0, 1)
-data_train$clase_ternaria <- NULL
-data_train <- calculate_present_features(data_train)
+#data_train$target <- ifelse(data_train$clase_ternaria == 'CONTINUA', 0, 1)
+data_train[, "target" := ifelse(data_train$clase_ternaria == 'CONTINUA', 0, 1)] #tira warning, mejorar
+#data_train[, "target" := ifelse(data_train$clase_ternaria == 'BAJA+2', 1, 0)] #tira warning, mejorar
+#data_train$clase_ternaria <- NULL
+data_train[, clase_ternaria := NULL]
+#data_train <- calculate_present_features(data_train)
 
 
 data_test[, useless_columns] <- NULL
 data_test$target <- ifelse(data_test$clase_ternaria == 'BAJA+2', 1, 0)
 data_test$clase_ternaria <- NULL
-data_test <- calculate_present_features(data_test)
+#data_test <- calculate_present_features(data_test)
 
 
 target_index <- c(which(names(data_train) == "target"))
 
 
-#data_train <- as.data.frame(data_train)
+data_train <- as.data.frame(data_train)
+#setDF(data_train)
 train_pool <- catboost.load_pool(data = data_train[, -target_index], label = data_train[, target_index])
 
-#data_test <- as.data.frame(data_test)
+data_test <- as.data.frame(data_test)
 test_pool <- catboost.load_pool(data = data_test[, -target_index], label = data_test[, target_index])
 
 #table(is.na(data_test[,80]))
 #data_test[is.na(data_test[,80]), 80] <- 0
 
 
-calculate_profit <- function(cutoff, probabilities, true_classes){
-	sum((probabilities > cutoff) * ifelse(true_classes == 1, 11700, -300))
-}
-
-border <- round(sum(data_train$target) / nrow(data_train), 5)
+#border <- round(sum(data_train$target) / nrow(data_train), 5)
 
 fit_params <- list(
-		iterations = 1000,
 		loss_function = 'Logloss',
+		#loss_function = 'Logloss:border=0.025',
 		#loss_function = paste0('Logloss:border=', border),
 		#custom_loss = c('Logloss', 'AUC'),
 		task_type = 'GPU',
-		#ignored_features = c(4,9),
-		#border_count = 210,
-		#depth = 6,
 		train_dir = 'train_dir',
-		logging_level = 'Verbose'
+		logging_level = 'Verbose',
 
-		#border_count = 213,
-		#depth = 10
-		#learning_rate = 0.22,
-		#l2_leaf_reg = 8,
-		#random_strength = 8
+		iterations = 1000
+		#depth = 7,
+		#border_count = 254
+		#learning_rate = 0.3
+		#l2_leaf_reg = 10,
+		#random_strength = 1,
 		#bagging_temperature = 0
 )
 
@@ -153,11 +127,26 @@ model <- catboost.train(train_pool, NULL, fit_params)
 features_importance <- catboost.get_feature_importance(model, pool = train_pool, fstr_type = "FeatureImportance")
 features_importance <- data.frame(feature = dimnames(train_pool)[[2]], importance = features_importance)
 #features_importance <- data.frame(feature = attr(features_importance, "names"), importance = features_importance)
+features_importance <- features_importance[order(features_importance$importance, decreasing = TRUE),]
 	
 predictions_prob_training <- catboost.predict(model, train_pool, prediction_type = 'Probability')
 predictions_prob_testing <- catboost.predict(model, test_pool, prediction_type = 'Probability') 
-	
+
 invisible(gc())
+
+df_prueba <- data.frame(prob = predictions_prob_testing, class = data_test$target, value = ifelse(data_test$target == 1, 11700, -300))
+df_prueba <- df_prueba[order(df_prueba$prob, decreasing = TRUE),]
+df_prueba$profit_acum <- cumsum(df_prueba$value)
+#View(df_prueba[df_prueba$class == 1,])
+df_prueba[df_prueba$profit_acum == max(df_prueba$profit_acum), ]
+
+ggplot(df_prueba, aes(x = prob, y = profit_acum)) +
+	geom_line() +
+	coord_cartesian(ylim = c(0, max(df_prueba$profit_acum) * 1.05), xlim = c(0, df_prueba[df_prueba$profit_acum == max(df_prueba$profit_acum), "prob"] * 1.2)) +
+	scale_y_continuous(labels = function(x) format(x, scientific = FALSE)) +
+	scale_x_continuous(labels = function(x) format(x, scientific = FALSE))
+
+
 	
 cutoffs <- seq(0, 0.1, by = 0.001)
 #cutoffs <- seq(0, 0.05, by = 0.001)

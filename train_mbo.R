@@ -11,8 +11,8 @@ source('config.R')
 source('dataset_sql.R')
 source('functions.R')
 
-#train_periods <- c(201802)
-train_periods <- c(201704, 201703, 201702)
+train_periods <- c(201802)
+#train_periods <- c(201704, 201703, 201702)
 
 data_train <- get_period(train_periods)
 
@@ -44,10 +44,10 @@ catboost_train <- function(x = list(
 				l2_leaf_reg,
 				learning_rate,
 				#rsm,
-				cutoff,
+				#cutoff,
 				#cutoff_in_logloss,
-				random_strength
-				#bagging_temperature
+				random_strength,
+				bagging_temperature
 )){
 	
 	loss_function <- 'Logloss'
@@ -57,12 +57,10 @@ catboost_train <- function(x = list(
 	#https://effectiveml.com/using-grid-search-to-optimise-catboost-parameters.html
 	fit_params <- list(
 			iterations = x$iterations,
-			#thread_count = 10,
 			loss_function = loss_function,
 			#loss_function = 'Logloss',
 			#custom_loss = c('Logloss', 'AUC'),
 			task_type = 'GPU',
-			#ignored_features = c(4,9),
 			border_count = x$border_count,
 			depth = x$depth,
 			learning_rate = x$learning_rate,
@@ -71,8 +69,8 @@ catboost_train <- function(x = list(
 			train_dir = CONFIG$TRAIN_DIR,
 			logging_level = 'Verbose',
 			#logging_level = 'Silent',
-			random_strength = x$random_strength
-			#bagging_temperature = x$bagging_temperature
+			random_strength = x$random_strength,
+			bagging_temperature = x$bagging_temperature
 	)
 	
 	cat("training with these hyperparameters:\n")
@@ -85,7 +83,8 @@ catboost_train <- function(x = list(
 	
 	invisible(gc())
 	
-	profit <- calculate_profit(x$cutoff, predictions_prob_testing, data_test$target)
+	#profit <- calculate_profit(x$cutoff, predictions_prob_testing, data_test$target)
+	profit <- calculate_profit(CONFIG$DEFAULT_CUTOFF, predictions_prob_testing, data_test$target)
 	perfect_profit <- sum(data_test$target) * 11700
 
 	print(paste0("profit: $", formatC(profit, format="f", digits=0, big.mark=".", decimal.mark = ',')))
@@ -106,17 +105,18 @@ objetive_function <- makeSingleObjectiveFunction(
 		name = "catboost_optimizer",
 		fn   = catboost_train,
 		par.set = makeParamSet(
-				makeIntegerParam("depth", lower = 1L, upper = 10L),
-				#makeIntegerParam("iterations", lower = 250L, upper = 1250L),
+				makeIntegerParam("depth", lower = 6L, upper = 10L, default = 6L),
+				#makeIntegerParam("iterations", lower = 250L, upper = 1250L, default = 1000L),
 				makeIntegerParam("iterations", lower = 1L, upper = 10L),
-				makeIntegerParam("border_count", lower = 2L, upper = 254L), #subir fix para avisar que con 255 no va. Error in catboost.train(train_pool, NULL, fit_params) : c:/goagent/pipelines/buildmaster/catboost.git/catboost/cuda/gpu_data/compressed_index_builder.h:110: Error: can't proceed some features ,  Error: border count should be greater than 0. If you have nan-features, border count should be > 1. Got 1"
-				makeIntegerParam("l2_leaf_reg", lower = 1, upper = 10),
-				makeNumericParam("learning_rate", lower = 1e-07, upper = 1), #o 1e-06
+				makeIntegerParam("border_count", lower = 128L, upper = 254L, default = 128L),
+				#makeIntegerParam("border_count", lower = 2L, upper = 254L), #subir fix para avisar que con 255 no va. Error in catboost.train(train_pool, NULL, fit_params) : c:/goagent/pipelines/buildmaster/catboost.git/catboost/cuda/gpu_data/compressed_index_builder.h:110: Error: can't proceed some features ,  Error: border count should be greater than 0. If you have nan-features, border count should be > 1. Got 1"
+				makeIntegerParam("l2_leaf_reg", lower = 1, upper = 10, default = 3),
+				makeNumericParam("learning_rate", lower = 1e-07, upper = 1, default = 0.03), #o 1e-06
 				#makeNumericParam("rsm", lower = 0.01, upper = 1), #rsm on GPU is supported for pairwise modes only
-				makeNumericParam("cutoff", lower = 0.01, upper = 0.1),
+				#makeNumericParam("cutoff", lower = 0.01, upper = 0.1),
 				#makeIntegerParam("cutoff_in_logloss", lower = 0L, upper = 1L), #la regresion Kriging no soporta makeLogicalParam
-				makeIntegerParam("random_strength", lower = 1, upper = 20)
-				#makeIntegerParam("bagging_temperature", lower = 0, upper = 1)
+				makeIntegerParam("random_strength", lower = 1, upper = 20, default = 1),
+				makeIntegerParam("bagging_temperature", lower = 0, upper = 1, default = 1)
 		),
 		minimize = FALSE,
 		has.simple.signature = FALSE,

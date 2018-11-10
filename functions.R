@@ -1,4 +1,5 @@
 library("dplyr")
+source("config.R")
 
 calculate_profit <- function(cutoff, probabilities, true_classes){
 	sum((probabilities > cutoff) * ifelse(true_classes == 1, 11700, -300))
@@ -8,45 +9,204 @@ format_money <- function(value) {
 	paste0("$", formatC(value, format = "f", digits = 0, big.mark = ".", decimal.mark = ','))
 }
 
+calculate_backward_months <- function(period, quantity) {
+
+	counter <- 0
+	periods <- c()
+	while (counter <= quantity) {
+
+		yearr <- substr(period, 1, 4)
+		monthh <- substr(period, 5,6)
+
+		if (monthh == "00") {
+			monthh <- 12
+			yearr <- as.integer(yearr) - 1
+		}
+
+		period <- as.integer(paste0(yearr, monthh))
+		periods <- c(periods, period)
+
+		counter <- counter + 1
+		period <- period - 1
+	}
+
+
+	return(rev(periods))
+}
+
+
+
+
+load_dataset <- function(periods, remove_columns, growth = TRUE, acceleration = TRUE, derived = FALSE) {
+	backward <- 3 #3 meses pa tras
+	final_data <- NULL	
+
+	for (period in periods) {
+		needed_periods <- calculate_backward_months(period, backward)
+
+		data <- do.call(rbind, lapply(needed_periods, function(period1) fread(paste0(CONFIG$DATASETS_PATH, period1, '_dias.txt'), header = TRUE, sep = "\t")))
+
+		data[, (remove_columns) := NULL]
+		
+		if (derived) {
+			data <- as.data.table(calculate_present_features(data))
+		}		
+		
+		data_period <- data[foto_mes == period]
+
+		if(growth || acceleration) {
+		  needed_periods <- rev(needed_periods)
+		  
+		  count_by_cliente <- data[, .(count = .N), by = numero_de_cliente]
+		  clientes_incompletos <- count_by_cliente[count < backward + 1, numero_de_cliente]
+		  
+		  clientes_a_completar <- data[numero_de_cliente %in% clientes_incompletos & foto_mes == period, numero_de_cliente]
+		  clientes_a_borrar <- setdiff(clientes_incompletos, clientes_a_completar)
+		  data <- data[!(numero_de_cliente %in% clientes_a_borrar)]
+		  
+		  
+		  for(i in 2:length(needed_periods)) { #el mes actual no lo proceso
+		    clientes_to_add <- setdiff(data_period$numero_de_cliente, data[foto_mes == needed_periods[i]]$numero_de_cliente)
+		    dt_clientes_agregados = data.table(numero_de_cliente = clientes_to_add, foto_mes = needed_periods[i])
+		    data <- rbindlist(list(data, dt_clientes_agregados), use.names = TRUE, fill = TRUE)
+		    dt_clientes_agregados <- NULL
+		  }
+		  
+		  #super imrpotante!!!
+		  #data <- data[order(numero_de_cliente, foto_mes)]
+		  setorder(data, numero_de_cliente, foto_mes)
+		  
+		  #super impornte!!
+		  #data_period <- data_period[order(numero_de_cliente)]
+		  setorder(data_period, numero_de_cliente)
+		  
+		  
+		  period0 <- needed_periods[1]
+		  period1 <- needed_periods[2]
+		  period2 <- needed_periods[3]
+		  period3 <- needed_periods[4]
+		  
+		  #tendency_columns <- c("mplan_sueldo", "mcuentas_saldo", "mrentabilidad")
+		  avoid_tendency_columns <- c("numero_de_cliente", "foto_mes", "clase_ternaria")
+		  tendency_columns <- setdiff(colnames(data), avoid_tendency_columns)
+		  
+		  y0 <- data[foto_mes == period0, ..tendency_columns]
+		  y0[is.na(y0)] <- 0
+		  #y0[is.infinite(y0)] <- 0
+		  #y0[is.nan(y0)] <- 0
+		  y1 <- data[foto_mes == period1, ..tendency_columns]
+		  y1[is.na(y1)] <- 0
+		  #y1[is.infinite(y1)] <- 0
+		  #y1[is.nan(y1)] <- 0
+		  y2 <- data[foto_mes == period2, ..tendency_columns]
+		  y2[is.na(y2)] <- 0
+		  #y2[is.infinite(y2)] <- 0
+		  #y2[is.nan(y2)] <- 0
+		  y3 <- data[foto_mes == period3, ..tendency_columns]
+		  y3[is.na(y3)] <- 0
+		  #y3[is.infinite(y3)] <- 0
+		  #y3[is.nan(y3)] <- 0
+
+		  if(growth){
+		    crecimiento_df <- (y2 - 4 * y1 + 3 * y0) / 2  
+		    colnames(crecimiento_df) <- paste0(colnames(crecimiento_df), "_crec")
+			crecimiento_df <- scale(crecimiento_df)
+			crecimiento_df <- as.data.frame(crecimiento_df)
+		    #crecimiento_df <- data.frame(lapply(crecimiento_df, function(col) { round(scales::rescale(col, to = c(0, 100)), 2) }))
+			
+		    data_period[, colnames(crecimiento_df) := as.list(crecimiento_df)]
+		  }		  
+		  
+		  
+		  if(acceleration){
+		    aceleracion_df <- (-y3 + 4 * y2 - 5 * y1 + 2 * y0)
+		    colnames(aceleracion_df) <- paste0(colnames(aceleracion_df), "_acel")
+			aceleracion_df <- scale(aceleracion_df)
+			aceleracion_df <- as.data.frame(aceleracion_df)
+		    #aceleracion_df <- data.frame(lapply(aceleracion_df, function(col) { round(scales::rescale(col, to = c(0, 100)), 2) }))
+		    
+		    data_period[, colnames(aceleracion_df) := as.list(aceleracion_df)]
+		  }
+		  
+		}
+		
+		if(is.null(final_data)){
+			final_data <- data_period
+		} else {
+			final_data <- rbindlist(list(final_data, data_period))
+		}
+		
+		invisible(gc())
+	}
+
+	return(final_data)
+}
+#aa <- load_dataset(c(201802))
+
 calculate_present_features <- function(df) {
 	df <- mutate(df,
-			  mv_cuenta_estado2 = pmax(Master_cuenta_estado, Visa_cuenta_estado, na.rm = TRUE),
-			  mv_marca_atraso = pmax(Master_marca_atraso, Visa_marca_atraso, na.rm = TRUE),
-			  mv_mfinanciacion_limite = rowSums(cbind(Master_mfinanciacion_limite, Visa_mfinanciacion_limite), na.rm = TRUE),
-			  mv_Fvencimiento = pmin(Master_Fvencimiento, Visa_Fvencimiento, na.rm = TRUE),
-			  mv_Finiciomora = pmin(Master_Finiciomora, Visa_Finiciomora, na.rm = TRUE),
-			  mv_msaldototal = rowSums(cbind(Master_msaldototal, Visa_msaldototal), na.rm = TRUE),
-			  mv_msaldopesos = rowSums(cbind(Master_msaldopesos, Visa_msaldopesos), na.rm = TRUE),
-			  mv_msaldodolares = rowSums(cbind(Master_msaldodolares, Visa_msaldodolares), na.rm = TRUE),
-			  mv_mconsumospesos = rowSums(cbind(Master_mconsumospesos, Visa_mconsumospesos), na.rm = TRUE),
-			  mv_mconsumosdolares = rowSums(cbind(Master_mconsumosdolares, Visa_mconsumosdolares), na.rm = TRUE),
-			  mv_mlimitecompra = rowSums(cbind(Master_mlimitecompra, Visa_mlimitecompra), na.rm = TRUE),
-			  mv_madelantopesos = rowSums(cbind(Master_madelantopesos, Visa_madelantopesos), na.rm = TRUE),
-			  mv_madelantodolares = rowSums(cbind(Master_madelantodolares, Visa_madelantodolares), na.rm = TRUE),
-			  mv_fultimo_cierre = pmax(Master_fultimo_cierre, Visa_fultimo_cierre, na.rm = TRUE),
-			  mv_mpagado = rowSums(cbind(Master_mpagado, Visa_mpagado), na.rm = TRUE),
-			  mv_mpagospesos = rowSums(cbind(Master_mpagospesos, Visa_mpagospesos), na.rm = TRUE),
-			  mv_mpagosdolares = rowSums(cbind(Master_mpagosdolares, Visa_mpagosdolares), na.rm = TRUE),
-			  mv_fechaalta = pmax(Master_fechaalta, Visa_fechaalta, na.rm = TRUE),
-			  mv_mconsumototal = rowSums(cbind(Master_mconsumototal, Visa_mconsumototal), na.rm = TRUE),
-			  mv_tconsumos = rowSums(cbind(Master_tconsumos, Visa_tconsumos), na.rm = TRUE),
-			  mv_tadelantosefectivo = rowSums(cbind(Master_tadelantosefectivo, Visa_tadelantosefectivo), na.rm = TRUE),
-			  mv_mpagominimo = rowSums(cbind(Master_mpagominimo, Visa_mpagominimo), na.rm = TRUE),
-			  mvr_Master_mlimitecompra = Master_mlimitecompra / mv_mlimitecompra,
-			  mvr_Visa_mlimitecompra = Visa_mlimitecompra / mv_mlimitecompra,
-			  mvr_msaldototal = mv_msaldototal / mv_mlimitecompra,
-			  mvr_msaldopesos = mv_msaldopesos / mv_mlimitecompra,
-			  mvr_msaldopesos2 = mv_msaldopesos / mv_msaldototal,
-			  mvr_msaldodolares = mv_msaldodolares / mv_mlimitecompra,
-			  mvr_msaldodolares2 = mv_msaldodolares / mv_msaldototal,
-			  mvr_mconsumospesos = mv_mconsumospesos / mv_mlimitecompra,
-			  mvr_mconsumosdolares = mv_mconsumosdolares / mv_mlimitecompra,
-			  mvr_madelantopesos = mv_madelantopesos / mv_mlimitecompra,
-			  mvr_madelantodolares = mv_madelantodolares / mv_mlimitecompra,
-			  mvr_mpagado = mv_mpagado / mv_mlimitecompra,
-			  mvr_mpagospesos = mv_mpagospesos / mv_mlimitecompra,
-			  mvr_mpagosdolares = mv_mpagosdolares / mv_mlimitecompra,
-			  mvr_mconsumototal = mv_mconsumototal / mv_mlimitecompra,
-			  mvr_mpagominimo = mv_mpagominimo / mv_mlimitecompra
-		)
+		mv_cuenta_estado2 = pmax(Master_cuenta_estado, Visa_cuenta_estado, na.rm = TRUE),
+		mv_marca_atraso = pmax(Master_marca_atraso, Visa_marca_atraso, na.rm = TRUE),
+		mv_mfinanciacion_limite = rowSums(cbind(Master_mfinanciacion_limite, Visa_mfinanciacion_limite), na.rm = TRUE),
+		mv_Fvencimiento = pmin(Master_Fvencimiento, Visa_Fvencimiento, na.rm = TRUE),
+		mv_Finiciomora = pmin(Master_Finiciomora, Visa_Finiciomora, na.rm = TRUE),
+		mv_msaldototal = rowSums(cbind(Master_msaldototal, Visa_msaldototal), na.rm = TRUE),
+		mv_msaldopesos = rowSums(cbind(Master_msaldopesos, Visa_msaldopesos), na.rm = TRUE),
+		mv_msaldodolares = rowSums(cbind(Master_msaldodolares, Visa_msaldodolares), na.rm = TRUE),
+		mv_mconsumospesos = rowSums(cbind(Master_mconsumospesos, Visa_mconsumospesos), na.rm = TRUE),
+		mv_mconsumosdolares = rowSums(cbind(Master_mconsumosdolares, Visa_mconsumosdolares), na.rm = TRUE),
+		mv_mlimitecompra = rowSums(cbind(Master_mlimitecompra, Visa_mlimitecompra), na.rm = TRUE),
+		mv_madelantopesos = rowSums(cbind(Master_madelantopesos, Visa_madelantopesos), na.rm = TRUE),
+		mv_madelantodolares = rowSums(cbind(Master_madelantodolares, Visa_madelantodolares), na.rm = TRUE),
+		mv_fultimo_cierre = pmax(Master_fultimo_cierre, Visa_fultimo_cierre, na.rm = TRUE),
+		mv_mpagado = rowSums(cbind(Master_mpagado, Visa_mpagado), na.rm = TRUE),
+		mv_mpagospesos = rowSums(cbind(Master_mpagospesos, Visa_mpagospesos), na.rm = TRUE),
+		mv_mpagosdolares = rowSums(cbind(Master_mpagosdolares, Visa_mpagosdolares), na.rm = TRUE),
+		mv_fechaalta = pmax(Master_fechaalta, Visa_fechaalta, na.rm = TRUE),
+		mv_mconsumototal = rowSums(cbind(Master_mconsumototal, Visa_mconsumototal), na.rm = TRUE),
+		mv_tconsumos = rowSums(cbind(Master_tconsumos, Visa_tconsumos), na.rm = TRUE),
+		mv_tadelantosefectivo = rowSums(cbind(Master_tadelantosefectivo, Visa_tadelantosefectivo), na.rm = TRUE),
+		mv_mpagominimo = rowSums(cbind(Master_mpagominimo, Visa_mpagominimo), na.rm = TRUE),
+
+		mvr_Master_mlimitecompra = Master_mlimitecompra / mv_mlimitecompra,
+		mvr_Visa_mlimitecompra = Visa_mlimitecompra / mv_mlimitecompra,
+		mvr_msaldototal = mv_msaldototal / mv_mlimitecompra,
+		mvr_msaldopesos = mv_msaldopesos / mv_mlimitecompra,
+		mvr_msaldopesos2 = mv_msaldopesos / mv_msaldototal,
+		mvr_msaldodolares = mv_msaldodolares / mv_mlimitecompra,
+		mvr_msaldodolares2 = mv_msaldodolares / mv_msaldototal,
+		mvr_mconsumospesos = mv_mconsumospesos / mv_mlimitecompra,
+		mvr_mconsumosdolares = mv_mconsumosdolares / mv_mlimitecompra,
+		mvr_madelantopesos = mv_madelantopesos / mv_mlimitecompra,
+		mvr_madelantodolares = mv_madelantodolares / mv_mlimitecompra,
+		mvr_mpagado = mv_mpagado / mv_mlimitecompra,
+		mvr_mpagospesos = mv_mpagospesos / mv_mlimitecompra,
+		mvr_mpagosdolares = mv_mpagosdolares / mv_mlimitecompra,
+		mvr_mconsumototal = mv_mconsumototal / mv_mlimitecompra,
+		mvr_mpagominimo = mv_mpagominimo / mv_mlimitecompra,
+
+	z_prom_pagodeservicios = ifelse(tpagodeservicios == 0 || is.na(tpagodeservicios), 0, mpagodeservicios / tpagodeservicios),
+	z_prom_pagomiscuentas = ifelse(tpagomiscuentas == 0 || is.na(tpagomiscuentas), 0, mpagomiscuentas / tpagomiscuentas),
+	z_pagodeserviciosypagomiscuentas = rowSums(cbind(mpagodeservicios, mpagomiscuentas), na.rm = TRUE),
+	z_prom_debitos = ifelse(tcuenta_debitos_automaticos == 0 || is.na(tcuenta_debitos_automaticos), 0, mcuenta_debitos_automaticos / tcuenta_debitos_automaticos),
+	z_ratio_debitos_sueldo = mcuenta_debitos_automaticos / mplan_sueldo,
+
+	z_prom_sueldoporempresa = mplan_sueldo / tplan_sueldo,
+	z_sueldototal = rowSums(cbind(mplan_sueldo, mplan_sueldo_manual), na.rm = TRUE),
+	z_ratio_limitestarjetas_sueldo = z_sueldototal / mv_mlimitecompra,
+
+	z_ratio_rentabilidad = mrentabilidad / mrentabilidad_annual,
+
+	z_total_prestamos = rowSums(cbind(mprestamos_personales, mprestamos_prendarios, mprestamos_hipotecarios), na.rm = TRUE),
+	z_prom_prestamos = z_total_prestamos / rowSums(cbind(cprestamos_personales, cprestamos_prendarios, cprestamos_hipotecarios), na.rm = TRUE),
+
+	z_prom_prestamos_personales = mprestamos_personales / cprestamos_personales,
+	z_prom_prestamos_prendarios = mprestamos_prendarios / cprestamos_prendarios,
+	z_prom_prestamos_hipotecarios = mprestamos_hipotecarios / cprestamos_hipotecarios,
+
+
+	z_prom_transaccionesdebito = ifelse(ttarjeta_debito == 0 || is.na(ttarjeta_debito), 0, ctarjeta_debito_transacciones / ttarjeta_debito),
+
+	z_total_transaccionescchb = rowSums(cbind(ccallcenter_transacciones, chomebanking_transacciones), na.rm = TRUE)
+	)
 }

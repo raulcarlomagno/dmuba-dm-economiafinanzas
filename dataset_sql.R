@@ -32,4 +32,15 @@ get_period <- function(periods, history_fields = FALSE){
 }
 
 
+get_all_by_clase <- function(periodos_not) {
+	dataset_connection <- dbConnect(SQLite(), CONFIG$DATASET_FILE, flags = SQLITE_RWC)
 
+	#USAR LA CLASE DEL PARAMETROS
+	query <- paste("SELECT * FROM periodos WHERE clase_ternaria = 'BAJA+1' AND foto_mes IN (", paste(periodos_not, collapse = ', '), ")")
+
+	df_query <- dbGetQuery(dataset_connection, query)
+
+	dbDisconnect(dataset_connection)
+
+	return(df_query)
+}
