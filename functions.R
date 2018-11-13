@@ -49,27 +49,32 @@ calculate_backward_months <- function(period, quantity) {
 
 
 
-load_dataset <- function(periods, remove_columns, columns_for_tendency = c(), growth = TRUE, acceleration = TRUE, derived = FALSE) {
+load_dataset <- function(periods, remove_columns = c(), avoid_columns_for_tendency = c(), growth = TRUE, acceleration = TRUE, tendency_andreu = FALSE, derived = FALSE) {
 	backward <- 3 #3 meses pa tras
 	final_data <- NULL	
 
 	for (period in periods) {
 		needed_periods <- period
-		if (growth || acceleration) {
+		if (growth || acceleration || tendency_andreu) {
 			needed_periods <- calculate_backward_months(period, backward)
 		}
 
 		data <- do.call(rbind, lapply(needed_periods, function(period1) fread(paste0(CONFIG$DATASETS_PATH, period1, '_dias.txt'), header = TRUE, sep = "\t")))
 
-		data[, (remove_columns) := NULL]
+		if(length(remove_columns) > 0){
+		  data[, (remove_columns) := NULL]  
+		}
+		
 		
 		if (derived) {
 			data <- as.data.table(calculate_present_features(data))
 		}		
 		
+		data[, cliente_edad := cut(data$cliente_edad, c(-Inf, 18, 30, 50, Inf))] 
+		
 		data_period <- data[foto_mes == period]
 
-		if(growth || acceleration) {
+		if (growth || acceleration || tendency_andreu) {
 		  needed_periods <- rev(needed_periods)
 		  
 		  count_by_cliente <- data[, .(count = .N), by = numero_de_cliente]
@@ -101,52 +106,64 @@ load_dataset <- function(periods, remove_columns, columns_for_tendency = c(), gr
 		  period2 <- needed_periods[3]
 		  period3 <- needed_periods[4]
 		  
-		  #tendency_columns <- c("mplan_sueldo", "mcuentas_saldo", "mrentabilidad")
-			avoid_tendency_columns <- c("numero_de_cliente", "foto_mes", "clase_ternaria")
 
-			if (length(columns_for_tendency) == 0)
-				columns_for_tendency <- colnames(data)
-
-			tendency_columns <- setdiff(columns_for_tendency, avoid_tendency_columns)
+			tendency_columns <- setdiff(colnames(data), avoid_columns_for_tendency)
 		  
-		  y0 <- data[foto_mes == period0, ..tendency_columns]
+		  y0 <- data[foto_mes == period3, ..tendency_columns]
 		  y0[is.na(y0)] <- 0
 		  #y0[is.infinite(y0)] <- 0
 		  #y0[is.nan(y0)] <- 0
-		  y1 <- data[foto_mes == period1, ..tendency_columns]
+		  y1 <- data[foto_mes == period2, ..tendency_columns]
 		  y1[is.na(y1)] <- 0
 		  #y1[is.infinite(y1)] <- 0
 		  #y1[is.nan(y1)] <- 0
-		  y2 <- data[foto_mes == period2, ..tendency_columns]
+		  y2 <- data[foto_mes == period1, ..tendency_columns]
 		  y2[is.na(y2)] <- 0
 		  #y2[is.infinite(y2)] <- 0
 		  #y2[is.nan(y2)] <- 0
-		  y3 <- data[foto_mes == period3, ..tendency_columns]
+		  y3 <- data[foto_mes == period0, ..tendency_columns]
 		  y3[is.na(y3)] <- 0
 		  #y3[is.infinite(y3)] <- 0
 		  #y3[is.nan(y3)] <- 0
 
+			#df_max <- max(y0, y1, y2, y3)
+			#df_min <- min(y0, y1, y2, y3)
+			#colnames(df_max) <- paste0(colnames(df_max), "__MAX")
+			#colnames(df_min) <- paste0(colnames(df_min), "__MIN")
+
+			#data_period[, colnames(df_max) := as.list(df_max)]
+			#data_period[, colnames(df_min) := as.list(df_min)]
+
 		  if(growth){
-		    crecimiento_df <- (y2 - 4 * y1 + 3 * y0) / 2  
-		    colnames(crecimiento_df) <- paste0(colnames(crecimiento_df), "__CREC")
-			crecimiento_df <- scale(crecimiento_df)
+			#crecimiento_df <- (y2 - 4 * y1 + 3 * y0) / 2  #diferencia finitas regresivas
+			crecimiento_df <- ((-2 * y0 + 9 * y1 - 18 * y2 + 11 * y3) / 6) #newton
+
+			colnames(crecimiento_df) <- paste0(colnames(crecimiento_df), "__CREC")
+			#crecimiento_df <- scale(crecimiento_df)
 			crecimiento_df <- as.data.frame(crecimiento_df)
 		    #crecimiento_df <- data.frame(lapply(crecimiento_df, function(col) { round(scales::rescale(-col, to = c(-100, 100)), 2) }))
 			
 		    data_period[, colnames(crecimiento_df) := as.list(crecimiento_df)]
-		  }		  
-		  
+		  }	  
 		  
 		  if(acceleration){
-		    aceleracion_df <- (-y3 + 4 * y2 - 5 * y1 + 2 * y0)
+			#aceleracion_df <- (-y3 + 4 * y2 - 5 * y1 + 2 * y0) #diferencia finitas regresivas
+			aceleracion_df <- (-y0 + 4 * y1 - 5 * y2 + 2 * y3)  #newton
 		    colnames(aceleracion_df) <- paste0(colnames(aceleracion_df), "__ACEL")
-			aceleracion_df <- scale(aceleracion_df)
+			#aceleracion_df <- scale(aceleracion_df)
 			aceleracion_df <- as.data.frame(aceleracion_df)
 		    #aceleracion_df <- data.frame(lapply(aceleracion_df, function(col) { round(scales::rescale(-col, to = c(-100, 100)), 2) }))
 		    
 		    data_period[, colnames(aceleracion_df) := as.list(aceleracion_df)]
 		  }
-		  
+
+			if (tendency_andreu) {
+				andreu_df <- (-(y3 - y2) / y2)
+				colnames(andreu_df) <- paste0(colnames(andreu_df), "__ANDREU")
+				andreu_df <- as.data.frame(andreu_df)
+				data_period[, colnames(andreu_df) := as.list(andreu_df)]
+			}
+
 		}
 		
 		if(is.null(final_data)){
@@ -163,7 +180,7 @@ load_dataset <- function(periods, remove_columns, columns_for_tendency = c(), gr
 #aa <- load_dataset(c(201802))
 
 calculate_present_features <- function(df) {
-	df <- mutate(df,
+	return(mutate(df,
 		mv_cuenta_estado2 = pmax(Master_cuenta_estado, Visa_cuenta_estado, na.rm = TRUE),
 		mv_marca_atraso = pmax(Master_marca_atraso, Visa_marca_atraso, na.rm = TRUE),
 		mv_mfinanciacion_limite = rowSums(cbind(Master_mfinanciacion_limite, Visa_mfinanciacion_limite), na.rm = TRUE),
@@ -227,5 +244,5 @@ calculate_present_features <- function(df) {
 	z_prom_transaccionesdebito = ifelse(ttarjeta_debito == 0 || is.na(ttarjeta_debito), 0, ctarjeta_debito_transacciones / ttarjeta_debito),
 
 	z_total_transaccionescchb = rowSums(cbind(ccallcenter_transacciones, chomebanking_transacciones), na.rm = TRUE)
-	)
+	))
 }

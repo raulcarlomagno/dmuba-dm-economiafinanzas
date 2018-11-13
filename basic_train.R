@@ -11,34 +11,68 @@ source('config.R')
 source('functions.R')
 source('dataset_sql.R')
 
-remove_columns <- c('tpaquete1', 'tpaquete2', 'tpaquete3', 'tpaquete4', 'tpaquete5', 'tpaquete6', 'tpaquete8')
-tendency_columns <- c(
-	   'mplan_sueldo',
-	   'tplan_sueldo',
-	   'mprestamos_personales',
-	   'mrentabilidad',
-	   'mactivos_margen',
-	   'mcuentas_saldo',
-	   'mtarjeta_visa_consumo',
-	   'mcuenta_corriente_Paquete',
-	   'mpasivos_margen',
-	   'mrentabilidad_annual'
+remove_columns <- c(
+	 'tpaquete1',
+	 'tpaquete2',
+	 'tpaquete3',
+	 'tpaquete4',
+	 'tpaquete5',
+	 'tpaquete6',
+	 'tpaquete8',
+	 'mcuenta_corriente_dolares',
+	 'tfondos_comunes_inversion',
+	 'mbonos_corporativos',
+	 'mmonedas_extranjeras',
+	 'minversiones_otras',
+	 'ccuenta_descuentos',
+	 'tautoservicio',
+	 'cautoservicio_transacciones',
+	 'Master_marca_atraso',
+	 'Visa_madelantodolares')
+
+avoid_tendency_columns <- c(
+	"numero_de_cliente",
+	"foto_mes",
+	"marketing_activo_ultimos90dias",
+	"cliente_vip",
+	"internet",
+	"cliente_edad",
+	"cliente_antiguedad",
+	"tpaquete7",
+	"tpaquete9",  
+	"tcuenta_corriente",
+	"tcaja_seguridad",
+	"tcallcenter",
+	"thomebanking",
+	"Master_marca_atraso",
+	"Master_cuenta_estado",
+	"Master_Fvencimiento",
+	"Master_Finiciomora",
+	"Master_fultimo_cierre",
+	"Master_fechaalta",
+	"Visa_marca_atraso",
+	"Visa_cuenta_estado",
+	"Visa_Fvencimiento",
+	"Visa_Finiciomora",
+   "Visa_fultimo_cierre",
+   "Visa_fechaalta",
+   "clase_ternaria"
 )
 
-#tendencia para todas
-tendency_columns <- c()
+categorical_features <- c("cliente_edad", "Master_cuenta_estado", "Visa_cuenta_estado")
 
-calculate_growth <- FALSE
-calculate_acceleration <- FALSE
+calculate_growth <- TRUE
+calculate_acceleration <- TRUE
+calculate_andreu_tendency <- FALSE
 calculate_derived <- FALSE
 
 
-#train_periods <- c(201802, 201801, 201712, 201711, 201710, 201709, 201708) #DEADLINE
+#train_periods <- c(201802, 201801, 201712, 201711, 201710, 201709, 201708, 201707) #DEADLINE
 #train_periods <- c(201802, 201801, 201712, 201704, 201703, 201702) #winner
-train_periods <- c(201802, 201801, 201712, 201704, 201702, 201701) #winner NUEVO??
+#train_periods <- c(201802, 201801, 201712, 201704, 201702, 201701) #winner NUEVO??
 #train_periods <- c(201802, 201801, 201712, 201702, 201701, 201612) #propuesta por viviana
 
-#train_periods <- c(201802)
+train_periods <- c(201802)
 #train_periods <- c(201801, 201712, 201711)
 #train_periods <- c(201802, 201801, 201712, 201711)
 #train_periods <- c(201802, 201801, 201712, 201711, 201710, 201709, 201708)
@@ -63,9 +97,10 @@ train_periods <- c(201802, 201801, 201712, 201704, 201702, 201701) #winner NUEVO
 #data_train <- do.call(rbind, lapply(train_periods, function(period) fread(paste0(CONFIG$DATASETS_PATH, period, '_dias.txt'), header = TRUE, sep = "\t")))
 data_train <- load_dataset(train_periods,
 		 remove_columns,
-		 tendency_columns,
+		 avoid_tendency_columns,
 		 growth = calculate_growth,
 		 acceleration = calculate_acceleration,
+		 tendency_andreu = calculate_andreu_tendency,
 		 derived = calculate_derived
 		 )
 
@@ -78,9 +113,10 @@ data_train <- load_dataset(train_periods,
 test_periods <- c(201804)
 data_test <- load_dataset(test_periods,
 		remove_columns,
-		tendency_columns,
+		avoid_tendency_columns,
 		growth = calculate_growth,
 		acceleration = calculate_acceleration,
+		tendency_andreu = calculate_andreu_tendency,
 		derived = calculate_derived
 		)
 
@@ -89,14 +125,15 @@ final_preprocess(data_train, useless_columns, TRUE)
 final_preprocess(data_test, useless_columns, FALSE)
 
 target_index <- c(which(names(data_train) == "target"))
+categorical_indexes <- c(which(names(data_train) %in% categorical_features))
 
 data_train <- as.data.frame(data_train)
 #setDF(data_train)
-train_pool <- catboost.load_pool(data = data_train[, -target_index], label = data_train[, target_index])
+train_pool <- catboost.load_pool(data = data_train[, - target_index], label = data_train[, target_index], cat_features = categorical_indexes)
 #train_pool <- catboost.load_pool(data = setDF(data_train)[, -target_index], label = setDF(data_train, "target"))
 
 data_test <- as.data.frame(data_test)
-test_pool <- catboost.load_pool(data = data_test[, -target_index], label = data_test[, target_index])
+test_pool <- catboost.load_pool(data = data_test[, - target_index], label = data_test[, target_index], cat_features = categorical_indexes)
 
 #border <- round(sum(data_train$target) / nrow(data_train), 5)
 
