@@ -9,7 +9,7 @@ library(ggplot2)
 
 source('config.R')
 source('functions.R')
-source('dataset_sql.R')
+#source('dataset_sql.R')
 
 remove_columns <- c(
 	 'tpaquete1',
@@ -18,17 +18,18 @@ remove_columns <- c(
 	 'tpaquete4',
 	 'tpaquete5',
 	 'tpaquete6',
-	 'tpaquete8',
-	 'mcuenta_corriente_dolares',
-	 'tfondos_comunes_inversion',
-	 'mbonos_corporativos',
-	 'mmonedas_extranjeras',
-	 'minversiones_otras',
-	 'ccuenta_descuentos',
-	 'tautoservicio',
-	 'cautoservicio_transacciones',
-	 'Master_marca_atraso',
-	 'Visa_madelantodolares')
+	 'tpaquete8'
+	 #'mcuenta_corriente_dolares',
+	 #'tfondos_comunes_inversion',
+	 #'mbonos_corporativos',
+	 #'mmonedas_extranjeras',
+	 #'minversiones_otras',
+	 #'ccuenta_descuentos',
+	 #'tautoservicio',
+	 #'cautoservicio_transacciones',
+	 #'Master_marca_atraso',
+	 #'Visa_madelantodolares'
+)
 
 avoid_tendency_columns <- c(
 	"numero_de_cliente",
@@ -63,7 +64,7 @@ categorical_features <- c("cliente_edad", "Master_cuenta_estado", "Visa_cuenta_e
 
 calculate_growth <- TRUE
 calculate_acceleration <- TRUE
-calculate_andreu_tendency <- FALSE
+calculate_andreu_tendency <- TRUE
 calculate_derived <- FALSE
 
 
@@ -98,6 +99,7 @@ train_periods <- c(201802)
 data_train <- load_dataset(train_periods,
 		 remove_columns,
 		 avoid_tendency_columns,
+		 categorical_features,
 		 growth = calculate_growth,
 		 acceleration = calculate_acceleration,
 		 tendency_andreu = calculate_andreu_tendency,
@@ -114,6 +116,7 @@ test_periods <- c(201804)
 data_test <- load_dataset(test_periods,
 		remove_columns,
 		avoid_tendency_columns,
+		categorical_features,
 		growth = calculate_growth,
 		acceleration = calculate_acceleration,
 		tendency_andreu = calculate_andreu_tendency,
@@ -125,7 +128,7 @@ final_preprocess(data_train, useless_columns, TRUE)
 final_preprocess(data_test, useless_columns, FALSE)
 
 target_index <- c(which(names(data_train) == "target"))
-categorical_indexes <- c(which(names(data_train) %in% categorical_features))
+categorical_indexes <- c(which(names(data_train) %in% categorical_features)) - 1
 
 data_train <- as.data.frame(data_train)
 #setDF(data_train)
@@ -147,6 +150,12 @@ fit_params <- list(
 		logging_level = 'Verbose',
 
 		iterations = 1000
+
+		#use_best_model = TRUE,
+		#eval_metric = 'Logloss',
+		#od_type = 'Iter'
+		#od_wait = 40
+
 		#depth = 7,
 		#border_count = 254
 		#learning_rate = 0.3

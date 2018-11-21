@@ -49,13 +49,24 @@ calculate_backward_months <- function(period, quantity) {
 
 
 
-load_dataset <- function(periods, remove_columns = c(), avoid_columns_for_tendency = c(), growth = TRUE, acceleration = TRUE, tendency_andreu = FALSE, derived = FALSE) {
+load_dataset <- function(periods,
+                         remove_columns = c(),
+                         avoid_columns_for_tendency = c(),
+                         categorical_features = c(),
+                         remove_columns_final = c(),
+                         growth_polinomio = TRUE,
+                         acceleration_polinomio = TRUE,
+                         growth_dif_finitas = TRUE,
+                         acceleration_dif_finitas = TRUE,
+                         tendency_andreu = TRUE,
+                         derived = FALSE,
+                         max_min_etc = FALSE) {
 	backward <- 3 #3 meses pa tras
 	final_data <- NULL	
 
 	for (period in periods) {
 		needed_periods <- period
-		if (growth || acceleration || tendency_andreu) {
+		if (growth_polinomio || acceleration_polinomio || tendency_andreu || growth_dif_finitas || acceleration_dif_finitas) {
 			needed_periods <- calculate_backward_months(period, backward)
 		}
 
@@ -74,7 +85,7 @@ load_dataset <- function(periods, remove_columns = c(), avoid_columns_for_tenden
 		
 		data_period <- data[foto_mes == period]
 
-		if (growth || acceleration || tendency_andreu) {
+		if (growth_polinomio || acceleration_polinomio || tendency_andreu || growth_dif_finitas || acceleration_dif_finitas) {
 		  needed_periods <- rev(needed_periods)
 		  
 		  count_by_cliente <- data[, .(count = .N), by = numero_de_cliente]
@@ -126,37 +137,63 @@ load_dataset <- function(periods, remove_columns = c(), avoid_columns_for_tenden
 		  #y3[is.infinite(y3)] <- 0
 		  #y3[is.nan(y3)] <- 0
 
-			#df_max <- max(y0, y1, y2, y3)
-			#df_min <- min(y0, y1, y2, y3)
-			#colnames(df_max) <- paste0(colnames(df_max), "__MAX")
-			#colnames(df_min) <- paste0(colnames(df_min), "__MIN")
-
-			#data_period[, colnames(df_max) := as.list(df_max)]
-			#data_period[, colnames(df_min) := as.list(df_min)]
-
-		  if(growth){
-			#crecimiento_df <- (y2 - 4 * y1 + 3 * y0) / 2  #diferencia finitas regresivas
-			crecimiento_df <- ((-2 * y0 + 9 * y1 - 18 * y2 + 11 * y3) / 6) #newton
-
-			colnames(crecimiento_df) <- paste0(colnames(crecimiento_df), "__CREC")
-			#crecimiento_df <- scale(crecimiento_df)
-			crecimiento_df <- as.data.frame(crecimiento_df)
-		    #crecimiento_df <- data.frame(lapply(crecimiento_df, function(col) { round(scales::rescale(-col, to = c(-100, 100)), 2) }))
-			
-		    data_period[, colnames(crecimiento_df) := as.list(crecimiento_df)]
-		  }	  
 		  
-		  if(acceleration){
-			#aceleracion_df <- (-y3 + 4 * y2 - 5 * y1 + 2 * y0) #diferencia finitas regresivas
-			aceleracion_df <- (-y0 + 4 * y1 - 5 * y2 + 2 * y3)  #newton
-		    colnames(aceleracion_df) <- paste0(colnames(aceleracion_df), "__ACEL")
-			#aceleracion_df <- scale(aceleracion_df)
-			aceleracion_df <- as.data.frame(aceleracion_df)
-		    #aceleracion_df <- data.frame(lapply(aceleracion_df, function(col) { round(scales::rescale(-col, to = c(-100, 100)), 2) }))
+		  if(max_min_etc){
+		    df_max <- pmax(y0, y1, y2, y3, na.rm = T)
+		    df_max <- df_max / y0
+		    df_min <- pmin(y0, y1, y2, y3, na.rm = T)
+		    df_min <- df_min / y0
+		    colnames(df_max) <- paste0(colnames(df_max), "__MAX")
+		    colnames(df_min) <- paste0(colnames(df_min), "__MIN")
 		    
-		    data_period[, colnames(aceleracion_df) := as.list(aceleracion_df)]
+		    data_period[, colnames(df_max) := as.list(df_max)]
+		    data_period[, colnames(df_min) := as.list(df_min)]
 		  }
 
+
+		  if(growth_polinomio){
+  			crecimiento_df_poli <- ((-2 * y0 + 9 * y1 - 18 * y2 + 11 * y3) / 6 * y0) #newton
+  
+  			colnames(crecimiento_df_poli) <- paste0(colnames(crecimiento_df_poli), "__CREC_POLI")
+  			#crecimiento_df <- scale(crecimiento_df)
+  			crecimiento_df_poli <- as.data.frame(crecimiento_df_poli)
+  		    #crecimiento_df <- data.frame(lapply(crecimiento_df, function(col) { round(scales::rescale(-col, to = c(-100, 100)), 2) }))
+  			
+  		    data_period[, colnames(crecimiento_df_poli) := as.list(crecimiento_df_poli)]
+  		    #VER LOS NAAA
+		  }
+		  
+		  if(growth_dif_finitas){
+		    crecimiento_df_difini <- (y2 - 4 * y1 + 3 * y0) / 2 * y0  #diferencia finitas regresivas
+		    
+		    colnames(crecimiento_df_difini) <- paste0(colnames(crecimiento_df_difini), "__CREC_DIFINI")
+		    #crecimiento_df <- scale(crecimiento_df)
+		    crecimiento_df_difini <- as.data.frame(crecimiento_df_difini)
+		    #crecimiento_df <- data.frame(lapply(crecimiento_df, function(col) { round(scales::rescale(-col, to = c(-100, 100)), 2) }))
+		    
+		    data_period[, colnames(crecimiento_df_difini) := as.list(crecimiento_df_difini)]
+		  }
+		  
+		  if(acceleration_polinomio){
+			    aceleracion_df_poli <- (-y0 + 4 * y1 - 5 * y2 + 2 * y3) / y0 #newton
+		      colnames(aceleracion_df_poli) <- paste0(colnames(aceleracion_df_poli), "__ACEL_POLI")
+			    #aceleracion_df <- scale(aceleracion_df)
+		      aceleracion_df_poli <- as.data.frame(aceleracion_df_poli)
+		      #aceleracion_df <- data.frame(lapply(aceleracion_df, function(col) { round(scales::rescale(-col, to = c(-100, 100)), 2) }))
+		    
+		      data_period[, colnames(aceleracion_df_poli) := as.list(aceleracion_df_poli)]
+		  }
+
+		  if(acceleration_dif_finitas){
+		      aceleracion_df_difini <- (-y3 + 4 * y2 - 5 * y1 + 2 * y0) / y0 #diferencia finitas regresivas
+		      colnames(aceleracion_df_difini) <- paste0(colnames(aceleracion_df_difini), "__ACEL_DIFINI")
+		      #aceleracion_df <- scale(aceleracion_df)
+		      aceleracion_df_difini <- as.data.frame(aceleracion_df_difini)
+		      #aceleracion_df <- data.frame(lapply(aceleracion_df, function(col) { round(scales::rescale(-col, to = c(-100, 100)), 2) }))
+		    
+		      data_period[, colnames(aceleracion_df_difini) := as.list(aceleracion_df_difini)]
+		  }		  
+		  
 			if (tendency_andreu) {
 				andreu_df <- (-(y3 - y2) / y2)
 				colnames(andreu_df) <- paste0(colnames(andreu_df), "__ANDREU")
@@ -174,6 +211,17 @@ load_dataset <- function(periods, remove_columns = c(), avoid_columns_for_tenden
 		
 		invisible(gc())
 	}
+
+
+	if (length(remove_columns_final) > 0) {
+		final_data[, (remove_columns_final) := NULL]
+	}
+
+
+	if (length(categorical_features) > 0) {
+		final_data[, (categorical_features) := lapply(.SD, as.factor), .SDcols = categorical_features]
+	}
+
 
 	return(final_data)
 }
