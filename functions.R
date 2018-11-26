@@ -9,8 +9,7 @@ format_money <- function(value) {
 	paste0("$", formatC(value, format = "f", digits = 0, big.mark = ".", decimal.mark = ','))
 }
 
-final_preprocess <- function(df, useless_columns, is_train = TRUE) {
-	df[, (useless_columns) := NULL]
+final_preprocess <- function(df, is_train = TRUE) {
 	if (is_train) {
 		#mejorar
 		df[, target := ifelse(df$clase_ternaria == 'CONTINUA', 0, 1)]
@@ -66,7 +65,7 @@ load_dataset <- function(periods,
 
 	for (period in periods) {
 		needed_periods <- period
-		if (growth_polinomio || acceleration_polinomio || tendency_andreu || growth_dif_finitas || acceleration_dif_finitas) {
+		if (growth_polinomio || acceleration_polinomio || tendency_andreu || growth_dif_finitas || acceleration_dif_finitas || max_min_etc ) {
 			needed_periods <- calculate_backward_months(period, backward)
 		}
 
@@ -81,11 +80,12 @@ load_dataset <- function(periods,
 			data <- as.data.table(calculate_present_features(data))
 		}		
 		
-		data[, cliente_edad := cut(data$cliente_edad, c(-Inf, 18, 30, 50, Inf))] 
+		data[, cliente_edad := cut(data$cliente_edad, c(-Inf, 18, 25, 40, 55, Inf))] 
+
 		
 		data_period <- data[foto_mes == period]
 
-		if (growth_polinomio || acceleration_polinomio || tendency_andreu || growth_dif_finitas || acceleration_dif_finitas) {
+		if (growth_polinomio || acceleration_polinomio || tendency_andreu || growth_dif_finitas || acceleration_dif_finitas || max_min_etc) {
 		  needed_periods <- rev(needed_periods)
 		  
 		  count_by_cliente <- data[, .(count = .N), by = numero_de_cliente]
@@ -137,7 +137,8 @@ load_dataset <- function(periods,
 		  #y3[is.infinite(y3)] <- 0
 		  #y3[is.nan(y3)] <- 0
 
-		  
+		  data_period[, dependencia_salarial := ifelse(rowSums(cbind(y0[,tplan_sueldo],y1[,tplan_sueldo],y2[,tplan_sueldo],y3[,tplan_sueldo]), na.rm = TRUE) > 0 , 1, 0)]
+
 		  if(max_min_etc){
 		    df_max <- pmax(y0, y1, y2, y3, na.rm = T)
 		    df_max <- df_max / y0
@@ -288,9 +289,18 @@ calculate_present_features <- function(df) {
 	z_prom_prestamos_prendarios = mprestamos_prendarios / cprestamos_prendarios,
 	z_prom_prestamos_hipotecarios = mprestamos_hipotecarios / cprestamos_hipotecarios,
 
-
 	z_prom_transaccionesdebito = ifelse(ttarjeta_debito == 0 || is.na(ttarjeta_debito), 0, ctarjeta_debito_transacciones / ttarjeta_debito),
+	z_total_transaccionescchb = rowSums(cbind(ccallcenter_transacciones, chomebanking_transacciones), na.rm = TRUE),
 
-	z_total_transaccionescchb = rowSums(cbind(ccallcenter_transacciones, chomebanking_transacciones), na.rm = TRUE)
-	))
+	vivi_online = (ccallcenter_transacciones + chomebanking_transacciones + tautoservicio + ccajeros_propio_transacciones) 	/ (tcajas + tcajas_consultas + tcajas_depositos + tcajas_extracciones + tcajas_otras),
+	vivi_antig_ratio = cliente_antiguedad / cliente_edad, # sin tendencia
+	vivi_productos_edad = marketing_coss_selling / cliente_edad, # con tendencia
+	vivi_movim_ratio = tmovimientos_ultimos90dias / marketing_coss_selling, # con tendencia 
+	
+	vivi_mvr_msaldototal = (Master_msaldototal + Visa_msaldototal) / (Master_mlimitecompra + Visa_mlimitecompra),
+	vivi_mvr_madelanto = (Master_madelantopesos + Visa_madelantopesos + Master_madelantodolares + Visa_madelantodolares) /	  (Master_mlimitecompra + Visa_mlimitecompra),
+	vivi_mvr_mpagado = (Master_mpagado + Visa_mpagado) /  (Master_mlimitecompra + Visa_mlimitecompra),
+	vivi_mvr_mconsumototal = (Master_mconsumototal + Visa_mconsumototal) /  (Master_mlimitecompra + Visa_mlimitecompra),
+	vivi_mvr_mpagominimo = (Master_mconsumototal + Visa_mconsumototal) / (Master_mlimitecompra + Visa_mlimitecompra)
+		))
 }

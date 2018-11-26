@@ -31,6 +31,8 @@ remove_columns <- c(
 	 #'Visa_madelantodolares'
 )
 
+remove_columns_final <- c('numero_de_cliente', 'foto_mes')
+
 avoid_tendency_columns <- c(
 	"numero_de_cliente",
 	"foto_mes",
@@ -57,16 +59,21 @@ avoid_tendency_columns <- c(
 	"Visa_Finiciomora",
    "Visa_fultimo_cierre",
    "Visa_fechaalta",
-   "clase_ternaria"
+   "clase_ternaria",
+	"antig_ratio"
 )
 
 categorical_features <- c("cliente_edad", "Master_cuenta_estado", "Visa_cuenta_estado")
 
-calculate_growth <- TRUE
-calculate_acceleration <- TRUE
-calculate_andreu_tendency <- TRUE
-calculate_derived <- FALSE
+calculate_growth_polinomio <- F
+calculate_acceleration_polinomio <- F
+calculate_growth_dif_finitas <- F
+calculate_acceleration_dif_finitas <- F
+calculate_andreu_tendency <- F
+calculate_derived <- T
+calculate_max_min_etc <- T
 
+remove_cols_with_more_than_20percent_NA <- F
 
 #train_periods <- c(201802, 201801, 201712, 201711, 201710, 201709, 201708, 201707) #DEADLINE
 #train_periods <- c(201802, 201801, 201712, 201704, 201703, 201702) #winner
@@ -96,36 +103,49 @@ train_periods <- c(201802)
 
 #data_train <- get_period(train_periods)
 #data_train <- do.call(rbind, lapply(train_periods, function(period) fread(paste0(CONFIG$DATASETS_PATH, period, '_dias.txt'), header = TRUE, sep = "\t")))
-data_train <- load_dataset(train_periods,
-		 remove_columns,
-		 avoid_tendency_columns,
-		 categorical_features,
-		 growth = calculate_growth,
-		 acceleration = calculate_acceleration,
-		 tendency_andreu = calculate_andreu_tendency,
-		 derived = calculate_derived
-		 )
-
-#glimpse(data_train)
-
-
-#system.time(data_test <- get_period(test_periods, F))
-#data_test <- get_period(test_periods)
-#data_test <- do.call(rbind, lapply(test_periods, function(period) fread(paste0(CONFIG$DATASETS_PATH, period, '_dias.txt'), header = TRUE, sep = "\t")))
-test_periods <- c(201804)
-data_test <- load_dataset(test_periods,
+data_train <- load_dataset(
+		train_periods,
 		remove_columns,
 		avoid_tendency_columns,
 		categorical_features,
-		growth = calculate_growth,
-		acceleration = calculate_acceleration,
+		remove_columns_final,
+		growth_polinomio = calculate_growth_polinomio,
+		acceleration_polinomio = calculate_acceleration_polinomio,
+		growth_dif_finitas = calculate_growth_dif_finitas,
+		acceleration_dif_finitas = calculate_acceleration_dif_finitas,
 		tendency_andreu = calculate_andreu_tendency,
-		derived = calculate_derived
-		)
+		derived = calculate_derived,
+		max_min_etc = calculate_max_min_etc
+)
 
-useless_columns <- c('numero_de_cliente', 'foto_mes')
-final_preprocess(data_train, useless_columns, TRUE)
-final_preprocess(data_test, useless_columns, FALSE)
+
+if (remove_cols_with_more_than_20percent_NA) {
+	columns_na <- unname(which(colMeans(is.na(data_train)) > 0.2))
+	data_train[, (columns_na) := NULL]
+}
+
+test_periods <- c(201804)
+data_test <- load_dataset(
+		test_periods,
+		remove_columns,
+		avoid_tendency_columns,
+		categorical_features,
+		remove_columns_final,
+		growth_polinomio = calculate_growth_polinomio,
+		acceleration_polinomio = calculate_acceleration_polinomio,
+		growth_dif_finitas = calculate_growth_dif_finitas,
+		acceleration_dif_finitas = calculate_acceleration_dif_finitas,
+		tendency_andreu = calculate_andreu_tendency,
+		derived = calculate_derived,
+		max_min_etc = calculate_max_min_etc
+)
+
+if (remove_cols_with_more_than_20percent_NA) {
+	data_test[, (columns_na) := NULL]
+}
+
+final_preprocess(data_train, TRUE)
+final_preprocess(data_test, FALSE)
 
 target_index <- c(which(names(data_train) == "target"))
 categorical_indexes <- c(which(names(data_train) %in% categorical_features)) - 1
