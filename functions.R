@@ -139,21 +139,21 @@ load_dataset <- function(periods,
 
 		  data_period[, dependencia_salarial := ifelse(rowSums(cbind(y0[,tplan_sueldo],y1[,tplan_sueldo],y2[,tplan_sueldo],y3[,tplan_sueldo]), na.rm = TRUE) > 0 , 1, 0)]
 
+		  df_max <- pmax(y0, y1, y2, y3, na.rm = T)
+		  df_min <- pmin(y0, y1, y2, y3, na.rm = T)
+
 		  if(max_min_etc){
-		    df_max <- pmax(y0, y1, y2, y3, na.rm = T)
-		    df_max <- df_max / y0
-		    df_min <- pmin(y0, y1, y2, y3, na.rm = T)
-		    df_min <- df_min / y0
 		    colnames(df_max) <- paste0(colnames(df_max), "__MAX")
 		    colnames(df_min) <- paste0(colnames(df_min), "__MIN")
 		    
 		    data_period[, colnames(df_max) := as.list(df_max)]
-		    data_period[, colnames(df_min) := as.list(df_min)]
+		    data_period[, colnames(df_min) := as.list(df_min)]  
 		  }
-
+		  
+		  
 
 		  if(growth_polinomio){
-  			crecimiento_df_poli <- ((-2 * y0 + 9 * y1 - 18 * y2 + 11 * y3) / 6 * y0) #newton
+  			crecimiento_df_poli <- ((-2 * y0 + 9 * y1 - 18 * y2 + 11 * y3) / 6 * (df_max-df_min)) #newton
   
   			colnames(crecimiento_df_poli) <- paste0(colnames(crecimiento_df_poli), "__CREC_POLI")
   			#crecimiento_df <- scale(crecimiento_df)
@@ -165,7 +165,7 @@ load_dataset <- function(periods,
 		  }
 		  
 		  if(growth_dif_finitas){
-		    crecimiento_df_difini <- (y2 - 4 * y1 + 3 * y0) / 2 * y0  #diferencia finitas regresivas
+		    crecimiento_df_difini <- (y2 - 4 * y1 + 3 * y0) / 2 * (df_max-df_min)  #diferencia finitas regresivas
 		    
 		    colnames(crecimiento_df_difini) <- paste0(colnames(crecimiento_df_difini), "__CREC_DIFINI")
 		    #crecimiento_df <- scale(crecimiento_df)
@@ -176,7 +176,7 @@ load_dataset <- function(periods,
 		  }
 		  
 		  if(acceleration_polinomio){
-			    aceleracion_df_poli <- (-y0 + 4 * y1 - 5 * y2 + 2 * y3) / y0 #newton
+			    aceleracion_df_poli <- (-y0 + 4 * y1 - 5 * y2 + 2 * y3) / (df_max-df_min) #newton
 		      colnames(aceleracion_df_poli) <- paste0(colnames(aceleracion_df_poli), "__ACEL_POLI")
 			    #aceleracion_df <- scale(aceleracion_df)
 		      aceleracion_df_poli <- as.data.frame(aceleracion_df_poli)
@@ -186,7 +186,7 @@ load_dataset <- function(periods,
 		  }
 
 		  if(acceleration_dif_finitas){
-		      aceleracion_df_difini <- (-y3 + 4 * y2 - 5 * y1 + 2 * y0) / y0 #diferencia finitas regresivas
+		      aceleracion_df_difini <- (-y3 + 4 * y2 - 5 * y1 + 2 * y0) / (df_max-df_min) #diferencia finitas regresivas
 		      colnames(aceleracion_df_difini) <- paste0(colnames(aceleracion_df_difini), "__ACEL_DIFINI")
 		      #aceleracion_df <- scale(aceleracion_df)
 		      aceleracion_df_difini <- as.data.frame(aceleracion_df_difini)
