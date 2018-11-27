@@ -65,8 +65,8 @@ avoid_tendency_columns <- c(
 
 categorical_features <- c("cliente_edad", "Master_cuenta_estado", "Visa_cuenta_estado")
 
-calculate_growth_polinomio <- F
-calculate_acceleration_polinomio <- F
+calculate_growth_polinomio <- T
+calculate_acceleration_polinomio <- T
 calculate_growth_dif_finitas <- F
 calculate_acceleration_dif_finitas <- F
 calculate_andreu_tendency <- F

@@ -1,5 +1,6 @@
 library("dplyr")
 source("config.R")
+library(data.table)
 
 calculate_profit <- function(cutoff, probabilities, true_classes){
 	sum((probabilities > cutoff) * ifelse(true_classes == 1, 11700, -300))
@@ -111,15 +112,15 @@ load_dataset <- function(periods,
 		  #data_period <- data_period[order(numero_de_cliente)]
 		  setorder(data_period, numero_de_cliente)
 		  
-		  
 		  period0 <- needed_periods[1]
 		  period1 <- needed_periods[2]
 		  period2 <- needed_periods[3]
 		  period3 <- needed_periods[4]
 		  
-
 			tendency_columns <- setdiff(colnames(data), avoid_columns_for_tendency)
 		  
+			
+			
 		  y0 <- data[foto_mes == period3, ..tendency_columns]
 		  y0[is.na(y0)] <- 0
 		  #y0[is.infinite(y0)] <- 0
@@ -132,11 +133,25 @@ load_dataset <- function(periods,
 		  y2[is.na(y2)] <- 0
 		  #y2[is.infinite(y2)] <- 0
 		  #y2[is.nan(y2)] <- 0
-		  y3 <- data[foto_mes == period0, ..tendency_columns]
+		  y3 <- data[foto_mes == period0, ..tendency_columns] #period0 = period
 		  y3[is.na(y3)] <- 0
 		  #y3[is.infinite(y3)] <- 0
 		  #y3[is.nan(y3)] <- 0
-
+		  
+		  # for (i in tendency_columns){
+		  #     y0[is.na(get(i)), (i) := y1[.I, i]]
+		  # }
+		  # 
+		  # y0[is.na(y0)] <- y1[is.na(y0)]
+		  # y0[is.na(y0)] <- 0
+		  # 
+		  # y3[is.na(y3)] <- y2[is.na(y3)]
+		  # y3[is.na(y3)] <- 0
+		  # 
+		  # y1[is.na(y1)] <- (y0[is.na(y1)] + y2[is.na(y1)]) / 2
+		  # y2[is.na(y2)] <- (y1[is.na(y2)] + y3[is.na(y2)]) / 2		  
+		  
+		  
 		  data_period[, dependencia_salarial := ifelse(rowSums(cbind(y0[,tplan_sueldo],y1[,tplan_sueldo],y2[,tplan_sueldo],y3[,tplan_sueldo]), na.rm = TRUE) > 0 , 1, 0)]
 
 		  df_max <- pmax(y0, y1, y2, y3, na.rm = T)
@@ -195,7 +210,28 @@ load_dataset <- function(periods,
 		      data_period[, colnames(aceleracion_df_difini) := as.list(aceleracion_df_difini)]
 		  }		  
 		  
-			if (tendency_andreu) {
+	    if(acceleration_polinomio && growth_polinomio){
+	      tmp1 = sign(aceleracion_df_poli)
+	      tmp2 = sign(crecimiento_df_poli)
+	      
+	      df_noname = sign(tmp1 + tmp2)
+	      colnames(df_noname) <- paste0(colnames(df_noname), "__CAT_POLI")
+	      df_noname <- as.data.frame(df_noname)
+	      data_period[, colnames(df_noname) := as.list(df_noname)]
+	    }
+
+		  # if(acceleration_dif_finitas && growth_dif_finitas){
+		  #   tmp1 = sign(crecimiento_df_difini)
+		  #   tmp2 = sign(aceleracion_df_difini)
+		  #   
+		  #   df_noname = sign(tmp1 + tmp2)
+		  #   colnames(df_noname) <- paste0(colnames(df_noname), "__CAT_DIFINI")
+		  #   df_noname <- as.data.frame(df_noname)
+		  #   data_period[, colnames(df_noname) := as.list(df_noname)]
+		  # }
+		  
+		  		  	  
+  		if (tendency_andreu) {
 				andreu_df <- (-(y3 - y2) / y2)
 				colnames(andreu_df) <- paste0(colnames(andreu_df), "__ANDREU")
 				andreu_df <- as.data.frame(andreu_df)
