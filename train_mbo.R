@@ -1,19 +1,22 @@
 rm(list = ls())
 invisible(gc())
 
-#setwd('D:\\maestriadm\\dm economia finanzas\\bankchurn\\')
-setwd('/home/rcarlomagno/catboost/')
+if (Sys.info()[['sysname']] == 'Linux'){
+	setwd('/home/rcarlomagno/catboost/')
+}else{
+	setwd('D:\\maestriadm\\dm economia finanzas\\bankchurn\\')
+}
 
 library(catboost)
 library(mlrMBO)
 library(Metrics)
 
 EXPERIMENT_NAME <- 'solo andreu 201802, 201801, 201712, 201704, 201702, 201701'
-PLAN_ID <- 654
+PLAN_ID <- 682
 
 OPTIMIZATION_ITERATIONS <- 200
 SAVE_PROGRESS_EACH <- 600 #en segundos
-PROGRESS_FILENAME <- 'mbo_progress.RData'
+PROGRESS_FILENAME <-paste0('mbo_progress_exp_', PLAN_ID,'.RData')
 
 source('config.R')
 source('functions.R')
@@ -76,12 +79,12 @@ categorical_features <- c("cliente_edad", "Master_cuenta_estado", "Visa_cuenta_e
 
 
 
-calculate_growth_polinomio <- F
-calculate_acceleration_polinomio <- F
-calculate_growth_dif_finitas <- F
-calculate_acceleration_dif_finitas <- F
+calculate_growth_polinomio <- T
+calculate_acceleration_polinomio <- T
+calculate_growth_dif_finitas <- T
+calculate_acceleration_dif_finitas <- T
 calculate_andreu_tendency <- T
-calculate_derived <- F
+calculate_derived <- T
 calculate_max_min_etc <- F
 
 
@@ -89,7 +92,8 @@ calculate_max_min_etc <- F
 
 
 #train_periods <- c(201802)
-train_periods <- c(201802, 201801, 201712, 201704, 201702, 201701)
+#train_periods <- c(201802, 201801, 201712, 201704, 201702, 201701)
+train_periods <- c(201704, 201703, 201701, 201612, 201611, 201606, 201605, 201604)
 
 data_train <- load_dataset(
 		train_periods,
@@ -108,7 +112,8 @@ data_train <- load_dataset(
 
 
 
-test_periods <- c(201804)
+#test_periods <- c(201804)
+test_periods <- c(201706)
 data_test <- load_dataset(
 		test_periods,
 		remove_columns,
@@ -250,9 +255,9 @@ catboost_train <- function(x = list(
 			round(mean(logloss_training_total), 5),
 			round(profit_ratio_cutoff_total, 5),
 			round(profit_ratio_default_cutoff_total, 5),
-			mean(max_profit_cutoff_total),
+			round(mean(max_profit_cutoff_total), 5),
 			'catboost',
-			'3 iters mean',
+			'cv montecarlo 3x',
 			paste(train_periods, collapse = ', '),
 			paste(test_periods, collapse = ', '),
 			'',
@@ -274,13 +279,13 @@ objetive_function <- makeSingleObjectiveFunction(
 		name = "catboost_optimizer",
 		fn   = catboost_train,
 		par.set = makeParamSet(
-				makeIntegerParam("depth", lower = 6L, upper = 10L, default = 6L),
+				makeIntegerParam("depth", lower = 4L, upper = 10L, default = 6L),
 				makeIntegerParam("iterations", lower = 500L, upper = 1250L, default = 1000L),
 				#makeIntegerParam("iterations", lower = 1L, upper = 5L),
-				makeIntegerParam("l2_leaf_reg", lower = 1, upper = 50, default = 3), #upper = 10
+				makeIntegerParam("l2_leaf_reg", lower = 1, upper = 20, default = 3), #upper = 10
 				makeNumericParam("learning_rate", lower = 1e-07, upper = 1, default = 0.03), #o 1e-06
-				makeIntegerParam("random_strength", lower = 1, upper = 20, default = 1),
-				makeIntegerParam("bagging_temperature", lower = 0, upper = 50, default = 1) #upper = 1
+				makeNumericParam("random_strength", lower = 1, upper = 20, default = 1),
+				makeNumericParam("bagging_temperature", lower = 0, upper = 20, default = 1) #upper = 1
 		),
 		minimize = FALSE,
 		has.simple.signature = FALSE,
@@ -312,6 +317,6 @@ print(data.frame(mbo_result$x), row.names = FALSE )
 
 print(paste0("Max optimized profit: ", format_money(mbo_result$y)))
 
-png(paste0(CONFIG$WORK_PATH, "mbo.png"), width = 1920, height = 1080)
+png(paste0(CONFIG$WORK_PATH, "mbo_", PLAN_ID, ".png "), width = 1920, height = 1080)
 plot(mbo_result)
 dev.off()

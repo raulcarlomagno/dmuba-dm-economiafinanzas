@@ -92,12 +92,14 @@ save_mbo_evo_plot <- function(plan_id) {
 		plot(tiempoacum,
 		  metricamax,
 		  type = "n",
-		  main = paste("MBO evo (iteration: ", nrow(df_evo), ", max profit: ", format_money(max(df_evo$profit)), ")"),
+		  main = paste0("MBO evo (plan: ", plan_id, ", iteration: ", nrow(df_evo), ", max profit: ", format_money(max(df_evo$profit)), ")"),
 		  xlab = "Hours spent",
 		  ylab = "Profit",
 		  pch = 19)
 
-		lines(tiempoacum, metricamax, type = "l", col = "red", lwd = 2)
+		mtext(paste0("plot generated at ", Sys.time()), side = 3, cex = 0.5)
+		
+		lines(tiempoacum, metricamax, type = "l", col = "red")
 		lines(tiempoacum, df_evo$profit, type = "l", col = "green3")
 
 		dev.off()
