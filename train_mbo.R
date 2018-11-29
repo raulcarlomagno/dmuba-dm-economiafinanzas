@@ -11,7 +11,7 @@ library(catboost)
 library(mlrMBO)
 library(Metrics)
 
-EXPERIMENT_NAME <- 'solo andreu 201802, 201801, 201712, 201704, 201702, 201701'
+EXPERIMENT_NAME <- 'propuesta nro 1 del mail'
 PLAN_ID <- 682
 
 OPTIMIZATION_ITERATIONS <- 200
