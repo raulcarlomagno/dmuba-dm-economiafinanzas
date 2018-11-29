@@ -275,8 +275,8 @@ objetive_function <- makeSingleObjectiveFunction(
 		fn   = catboost_train,
 		par.set = makeParamSet(
 				makeIntegerParam("depth", lower = 6L, upper = 10L, default = 6L),
-				#makeIntegerParam("iterations", lower = 500L, upper = 1250L, default = 1000L),
-				makeIntegerParam("iterations", lower = 1L, upper = 5L),
+				makeIntegerParam("iterations", lower = 500L, upper = 1250L, default = 1000L),
+				#makeIntegerParam("iterations", lower = 1L, upper = 5L),
 				makeIntegerParam("l2_leaf_reg", lower = 1, upper = 50, default = 3), #upper = 10
 				makeNumericParam("learning_rate", lower = 1e-07, upper = 1, default = 0.03), #o 1e-06
 				makeIntegerParam("random_strength", lower = 1, upper = 20, default = 1),
