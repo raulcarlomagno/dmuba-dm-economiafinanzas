@@ -14,6 +14,20 @@ get_next_plan <- function(){
 	return(df_query)		
 }
 
+
+get_mbo_evolution <- function(plan_id) {
+	results_connection <- dbConnect(SQLite(), CONFIG$RESULTS_FILE, flags = SQLITE_RWC)
+
+	query <- paste0("SELECT minutes_taken, profit FROM experiments WHERE plan_id = ", plan_id, " ORDER BY id ASC")
+
+	df_query <- dbGetQuery(results_connection, query)
+
+	dbDisconnect(results_connection)
+
+	return(df_query)
+}
+
+
 insert_experiment_result <- function(experiment_code, minutes_taken, profit, profit_0025, auc_testing, logloss_testing, auc_training, logloss_training, perfect_profit_ratio, perfect_profit_ratio_0025, cutoff, algorithm, estimation, train_periods, test_periods, observation, plan_id, hyperparams) {
 	results_connection <- dbConnect(SQLite(), CONFIG$RESULTS_FILE)
 
@@ -62,4 +76,37 @@ finish_plan_period <- function(plan_id) {
 	query <- paste0("UPDATE plans SET finished = datetime('now') WHERE id = ", plan_id)
 	dbSendQuery(results_connection, query)
 	dbDisconnect(results_connection)
+}
+
+save_mbo_evo_plot <- function(plan_id) {
+	df_evo <- get_mbo_evolution(plan_id)
+
+	if (nrow(df_evo) > 0) {
+
+		file_name <- paste0(CONFIG$TRAIN_DIR, "mbo_evo_", PLAN_ID, ".jpg")
+
+		tiempoacum <- cumsum(df_evo$minutes_taken / 60)
+		metricamax <- cummax(df_evo$profit)
+		jpeg(filename = file_name, width = 6, height = 4, units = 'in', res = 300)
+
+		plot(tiempoacum,
+		  metricamax,
+		  type = "n",
+		  main = paste("MBO evo (iteration: ", nrow(df_evo), ", max profit: ", format_money(max(df_evo$profit)), ")"),
+		  xlab = "Hours spent",
+		  ylab = "Profit",
+		  pch = 19)
+
+		lines(tiempoacum, metricamax, type = "l", col = "red", lwd = 2)
+		lines(tiempoacum, df_evo$profit, type = "l", col = "green3")
+
+		dev.off()
+
+		if (CONFIG$IS_LINUX) { #copy file to bucket
+			file.copy(file_name, CONFIG$WORK_PATH, overwrite = TRUE)
+		}
+	
+	} else {
+		print(paste0("no data to plot mbo evo for plan_id ", plan_id))
+	}
 }
