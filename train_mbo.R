@@ -279,7 +279,7 @@ objetive_function <- makeSingleObjectiveFunction(
 		name = "catboost_optimizer",
 		fn   = catboost_train,
 		par.set = makeParamSet(
-				makeIntegerParam("depth", lower = 4L, upper = 10L, default = 6L),
+				makeIntegerParam("depth", lower = 6L, upper = 10L, default = 6L),
 				makeIntegerParam("iterations", lower = 500L, upper = 1250L, default = 1000L),
 				#makeIntegerParam("iterations", lower = 1L, upper = 5L),
 				makeIntegerParam("l2_leaf_reg", lower = 1, upper = 20, default = 3), #upper = 10

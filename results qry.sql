@@ -18,3 +18,6 @@ FROM hyperparams h
 INNER JOIN (select MAX(perfect_profit_ratio/logloss_testing) metric, *  from experiments group by plan_id) e on e.id = h.experiment_id
 order by test_periods, metric DESC
 
+
+
+el experimento 654 con id 137 , puede cortar en 670 iteraciones
