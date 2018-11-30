@@ -77,10 +77,10 @@ remove_cols_with_more_than_20percent_NA <- F
 
 #train_periods <- c(201802, 201801, 201712, 201711, 201710, 201709, 201708, 201707) #DEADLINE
 #train_periods <- c(201802, 201801, 201712, 201704, 201703, 201702) #winner
-#train_periods <- c(201802, 201801, 201712, 201704, 201702, 201701) #winner NUEVO??
+train_periods <- c(201802, 201801, 201712, 201704, 201702, 201701) #winner NUEVO??
 #train_periods <- c(201802, 201801, 201712, 201702, 201701, 201612) #propuesta por viviana
 
-train_periods <- c(201802)
+#train_periods <- c(201802)
 #train_periods <- c(201801, 201712, 201711)
 #train_periods <- c(201802, 201801, 201712, 201711)
 #train_periods <- c(201802, 201801, 201712, 201711, 201710, 201709, 201708)
@@ -169,19 +169,14 @@ fit_params <- list(
 		train_dir = 'train_dir',
 		logging_level = 'Verbose',
 
-		iterations = 1000
+		iterations = 670,
 
-		#use_best_model = TRUE,
-		#eval_metric = 'Logloss',
-		#od_type = 'Iter'
-		#od_wait = 40
-
-		#depth = 7,
-		#border_count = 254
-		#learning_rate = 0.3
-		#l2_leaf_reg = 10,
-		#random_strength = 1,
-		#bagging_temperature = 0
+		depth = 9,
+		border_count = 254,
+		learning_rate = 0.19656,
+		l2_leaf_reg = 21,
+		random_strength = 13,
+		bagging_temperature = 0
 )
 
 #model <- catboost.train(train_pool, test_pool, fit_params)

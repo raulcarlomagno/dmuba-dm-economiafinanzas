@@ -282,7 +282,7 @@ objetive_function <- makeSingleObjectiveFunction(
 				makeIntegerParam("depth", lower = 6L, upper = 10L, default = 6L),
 				makeIntegerParam("iterations", lower = 500L, upper = 1200L, default = 1000L),
 				#makeIntegerParam("iterations", lower = 1L, upper = 5L),
-				makeIntegerParam("l2_leaf_reg", lower = 1, upper = 20, default = 3), #upper = 10
+				makeIntegerParam("l2_leaf_reg", lower = 1, upper = 30, default = 3), #upper = 10
 				makeNumericParam("learning_rate", lower = 1e-07, upper = 1, default = 0.03), #o 1e-06
 				makeNumericParam("random_strength", lower = 1, upper = 20, default = 1),
 				makeNumericParam("bagging_temperature", lower = 0, upper = 20, default = 1) #upper = 1
