@@ -69,6 +69,12 @@ insert_experiment_result <- function(experiment_code, minutes_taken, profit, pro
 	dbSendQuery(results_connection, query)
 
 	dbDisconnect(results_connection)
+
+	if (CONFIG$IS_LINUX) {
+		#copy db to bucket
+		file.copy(CONFIG$RESULTS_FILE, CONFIG$WORK_PATH, overwrite = TRUE)
+	}
+
 }
 
 finish_plan_period <- function(plan_id) {
