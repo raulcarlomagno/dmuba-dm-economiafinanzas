@@ -3,61 +3,48 @@ library(Metrics)
 
 data_model_384 <- read.csv("384_predict_201806.csv")
 data_model_261 <- read.csv("261_predict_201806.csv")
+data_model_464 <- read.csv("464_predict_201806.csv")
+data_model_529 <- read.csv("529_predict_201806.csv")
+data_model_137 <- read.csv("137_predict_201806.csv")
+data_model_000 <- read.csv("000_predict_201806.csv")
 
 data_model_384 <- data_model_384[order(data_model_384$X),]
 data_model_261 <- data_model_261[order(data_model_261$X),]
+data_model_464 <- data_model_464[order(data_model_464$X),]
+data_model_529 <- data_model_529[order(data_model_529$X),]
+data_model_137 <- data_model_137[order(data_model_137$X),]
+data_model_000 <- data_model_000[order(data_model_000$X),]
 
 sum(data_model_384$X != data_model_261$X)
-
-df_stacked <- merge(x = data_model_384, y = data_model_261, by = "X", all = TRUE, suffixes = c("_model_384", "_model_261"))
-stacked2 <- merge(x = stacked, y = model_384, by = "X", all = TRUE)
-stacked2$prob_model_384 <- stacked2$prob
-stacked2$prob <- NULL
-stacked3 <- merge(x = stacked2, y = model_137, by = "X", all = TRUE)
-stacked3$prob_model_137 <- stacked3$prob
-stacked3$prob <- NULL
-stacked4 <- merge(x = stacked3, y = model_261, by = "X", all = TRUE)
-stacked4$prob_model_261 <- stacked4$prob
-stacked4$prob <- NULL
+sum(data_model_384$X != data_model_464$X)
+sum(data_model_384$X != data_model_529$X)
+sum(data_model_384$X != data_model_137$X)
+sum(data_model_384$X != data_model_000$X)
 
 
-rownames(stacked4) <- stacked4$X
-stacked4$X <- NULL
 
-class_index <- c(which(names(stacked4) == "class"))
-pool <- catboost.load_pool(data = stacked4[, - class_index], label = stacked4[, class_index])
 
-fit_params <- list(
-		loss_function = 'Logloss',
-		task_type = 'GPU',
-		train_dir = 'train_dir',
-		logging_level = 'Verbose',
+df_predict <- merge(x = data_model_464, y = data_model_529, by = "X", all = TRUE, suffixes = c("_model_464", "_model_529"))
+df_predict2 <- merge(x = df_predict, y = data_model_384, by = "X", all = TRUE)
+df_predict2$prob_model_384 <- df_predict2$prob
+df_predict2$prob <- NULL
+df_predict3 <- merge(x = df_predict2, y = data_model_137, by = "X", all = TRUE)
+df_predict3$prob_model_137 <- df_predict3$prob
+df_predict3$prob <- NULL
+df_predict4 <- merge(x = df_predict3, y = data_model_261, by = "X", all = TRUE)
+df_predict4$prob_model_261 <- df_predict4$prob
+df_predict4$prob <- NULL
+df_predict5 <- merge(x = df_predict4, y = data_model_000, by = "X", all = TRUE)
+df_predict5$prob_model_000 <- df_predict5$prob
+df_predict5$prob <- NULL
 
-		iterations = 1000
 
-		#depth = 9,
-		#border_count = 254,
-		#learning_rate = 0.19656,
-		#l2_leaf_reg = 21,
-		#random_strength = 13,
-		#bagging_temperature = 0
-)
+rownames(df_predict5) <- df_predict5$X
+df_predict5$X <- NULL
 
-model_stacked <- catboost.train(pool, NULL, fit_params)
+pool_predict <- catboost.load_pool(data = df_predict5)
 
-predictions_prob_training <- catboost.predict(model_stacked, pool, prediction_type = 'Probability')
+predictions_prob_201806 <- catboost.predict(model_stacked, pool_predict, prediction_type = 'Probability')
 
-#df <- data.frame(prom = rowMeans(stacked4[, -2]), prob = predictions_prob_training)
-#df$diff <- (df$prob - df$prom)
-#sum(df$diff)
-
-df_prueba <- data.frame(prob = predictions_prob_training, class = stacked4$class, value = ifelse(stacked4$class == 1, 11700, -300))
-df_prueba <- df_prueba[order(df_prueba$prob, decreasing = TRUE),]
-df_prueba$profit_acum <- cumsum(df_prueba$value)
-df_prueba[df_prueba$profit_acum == max(df_prueba$profit_acum),]
-
-auc_training <- round(auc(stacked4$class, predictions_prob_training), 5)
-logloss_training <- round(logLoss(stacked4$class, predictions_prob_training), 5)
-
-cat('AUC training:', auc_training, '\n')
-cat('LogLoss training:', logloss_training, '\n')
+data_entrega = data.frame(numero_de_cliente = rownames(df_predict5), prob = predictions_prob_201806)
+data_entrega <- data_entrega[order(data_entrega$prob, decreasing = TRUE),]
