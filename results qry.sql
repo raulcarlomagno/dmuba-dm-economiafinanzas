@@ -19,5 +19,19 @@ INNER JOIN (select MAX(perfect_profit_ratio/logloss_testing) metric, *  from exp
 order by test_periods, metric DESC
 
 
+select plan_id, id, profit, cutoff, perfect_profit_ratio, train_periods, test_periods,experiment_code
+from experiments ee
+where profit >= (select max(e.profit) from experiments e where e.plan_id = ee.plan_id)
+group by plan_id
+
+
+
+select * from experiments where plan_id = 381 order by profit desc
+select * from hyperparams where experiment_id = 501
+select * from hyperparams where experiment_id = 516
+select * from hyperparams where experiment_id = 464
+select * from hyperparams where experiment_id = 553
+select * from hyperparams where experiment_id = 504
+
 
 el experimento 654 con id 137 , puede cortar en 670 iteraciones

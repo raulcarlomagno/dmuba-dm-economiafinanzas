@@ -239,7 +239,9 @@ load_dataset <- function(periods,
 			}
 
 		}
-		
+
+		#data_period[, (tendency_columns) := NULL]
+
 		if(is.null(final_data)){
 			final_data <- data_period
 		} else {
@@ -250,6 +252,7 @@ load_dataset <- function(periods,
 	}
 
 
+	
 	if (length(remove_columns_final) > 0) {
 		final_data[, (remove_columns_final) := NULL]
 	}

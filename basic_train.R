@@ -31,7 +31,8 @@ remove_columns <- c(
 	 #'Visa_madelantodolares'
 )
 
-remove_columns_final <- c('numero_de_cliente', 'foto_mes')
+#remove_columns_final <- c('numero_de_cliente', 'foto_mes')
+remove_columns_final <- c('foto_mes')
 
 avoid_tendency_columns <- c(
 	"numero_de_cliente",
@@ -69,7 +70,7 @@ calculate_growth_polinomio <- F
 calculate_acceleration_polinomio <- F
 calculate_growth_dif_finitas <- F
 calculate_acceleration_dif_finitas <- F
-calculate_andreu_tendency <- T
+calculate_andreu_tendency <- F
 calculate_derived <- F
 calculate_max_min_etc <- F
 
@@ -77,10 +78,10 @@ remove_cols_with_more_than_20percent_NA <- F
 
 #train_periods <- c(201802, 201801, 201712, 201711, 201710, 201709, 201708, 201707) #DEADLINE
 #train_periods <- c(201802, 201801, 201712, 201704, 201703, 201702) #winner
-train_periods <- c(201802, 201801, 201712, 201704, 201702, 201701) #winner NUEVO??
+#train_periods <- c(201802, 201801, 201712, 201704, 201702, 201701) #winner NUEVO??
 #train_periods <- c(201802, 201801, 201712, 201702, 201701, 201612) #propuesta por viviana
 
-#train_periods <- c(201802)
+train_periods <- c(201802)
 #train_periods <- c(201801, 201712, 201711)
 #train_periods <- c(201802, 201801, 201712, 201711)
 #train_periods <- c(201802, 201801, 201712, 201711, 201710, 201709, 201708)
@@ -117,6 +118,7 @@ data_train <- load_dataset(
 		derived = calculate_derived,
 		max_min_etc = calculate_max_min_etc
 )
+data_train[, numero_de_cliente := NULL]
 
 
 if (remove_cols_with_more_than_20percent_NA) {
@@ -124,7 +126,7 @@ if (remove_cols_with_more_than_20percent_NA) {
 	data_train[, (columns_na) := NULL]
 }
 
-test_periods <- c(201804)
+test_periods <- c(201806)
 data_test <- load_dataset(
 		test_periods,
 		remove_columns,
@@ -139,8 +141,12 @@ data_test <- load_dataset(
 		derived = calculate_derived,
 		max_min_etc = calculate_max_min_etc
 )
+data_test_nro_cliente <- data_test$numero_de_cliente
+data_test[, numero_de_cliente := NULL]
 
-if (remove_cols_with_more_than_20percent_NA) {
+
+
+	if (remove_cols_with_more_than_20percent_NA) {
 	data_test[, (columns_na) := NULL]
 }
 
@@ -158,6 +164,10 @@ train_pool <- catboost.load_pool(data = data_train[, - target_index], label = da
 data_test <- as.data.frame(data_test)
 test_pool <- catboost.load_pool(data = data_test[, - target_index], label = data_test[, target_index], cat_features = categorical_indexes)
 
+#for predict
+#test_pool <- catboost.load_pool(data = data_test[, - target_index], cat_features = categorical_indexes)
+
+
 #border <- round(sum(data_train$target) / nrow(data_train), 5)
 
 fit_params <- list(
@@ -169,14 +179,14 @@ fit_params <- list(
 		train_dir = 'train_dir',
 		logging_level = 'Verbose',
 
-		iterations = 670,
+		iterations = 50
 
-		depth = 9,
-		border_count = 254,
-		learning_rate = 0.19656,
-		l2_leaf_reg = 21,
-		random_strength = 13,
-		bagging_temperature = 0
+		#depth = 9,
+		#border_count = 254,
+		#learning_rate = 0.19656,
+		#l2_leaf_reg = 21,
+		#random_strength = 13,
+		#bagging_temperature = 0
 )
 
 #model <- catboost.train(train_pool, test_pool, fit_params)
@@ -224,6 +234,7 @@ ggplot(profit_data, aes(x = cutoff, y = profit)) +
 		geom_text(aes(max_profit_cutoff, max(profit_data) - (max(profit_data) * 0.2), label = max_profit_cutoff), size = 4) +
 		geom_text(aes(max_profit_cutoff, max(profit_data) + (max(profit_data) * 0.2), label = paste0("$", formatC(max(profit_data), format = "f", digits = 0, big.mark = ".", decimal.mark = ','))), size = 4) +
 		geom_text(aes(CONFIG$DEFAULT_CUTOFF, 0, label = paste0("$", formatC(profit_default_cuttof, format = "f", digits = 0, big.mark = ".", decimal.mark = ','))), size = 4) +
+		ylim(0, NA) +
 		theme_minimal()
 
 cat('Training:', train_periods, '\n')

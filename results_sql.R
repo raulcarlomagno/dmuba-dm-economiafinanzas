@@ -98,7 +98,7 @@ save_mbo_evo_plot <- function(plan_id) {
 		plot(tiempoacum,
 		  metricamax,
 		  type = "n",
-		  main = paste0("MBO evo (plan: ", plan_id, ", iteration: ", nrow(df_evo), ", max profit: ", format_money(max(df_evo$profit)), ")"),
+		  main = paste0("MBO evo (iteration: ", nrow(df_evo), ", max profit: ", format_money(max(df_evo$profit)), ")"),
 		  xlab = "Hours spent",
 		  ylab = "Profit",
 		  pch = 19)
